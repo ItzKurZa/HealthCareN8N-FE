@@ -32,7 +32,18 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   useEffect(() => {
     loadDepartmentsAndDoctors();
-  }, []);
+  },[]);
+
+  useEffect(() => {
+    if (formData.department) {
+      const filtered = doctors.filter(
+        (doc) => doc.department_id === formData.department
+      );
+      setFilteredDoctors(filtered);
+    } else {
+      setFilteredDoctors([]);
+    }
+  }, [formData.department, doctors]);
 
   const loadDepartmentsAndDoctors = async () => {
     setDataLoading(true);
@@ -54,15 +65,14 @@ export const BookingPage = ({ user }: BookingPageProps) => {
     setLoading(true);
 
     try {
-      const selectedDepartment = departments.find((d) => d.id === formData.department);
-      const selectedDoctor = doctors.find((d) => d.id === formData.doctorId);
+      const selectedDoctor = doctors.find((d) => d.name === formData.doctorId);
 
       await bookingService.createBooking({
         user_id: user.cccd,
         full_name: user.fullname,
         email: user.email,
         phone: user.phone,
-        department: selectedDepartment?.name || '',
+        department: formData.department,
         doctor_name: selectedDoctor?.name || undefined,
         appointment_date: formData.appointmentDate,
         appointment_time: formData.appointmentTime,
@@ -77,7 +87,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         notes: '',
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to create booking');
+      setError(err.message || 'Failed to create booking 1');
     } finally {
       setLoading(false);
     }
@@ -127,9 +137,9 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                 required
               >
                 <option value="">Select a department</option>
-                {departments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
+                {departments.map((dept, index) => (
+                  <option key={index} value={dept}>
+                    {dept}
                   </option>
                 ))}
               </select>
@@ -137,7 +147,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Doctor (Optional)
+                Doctor
               </label>
               <select
                 value={formData.doctorId}
@@ -146,10 +156,9 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                 disabled={!formData.department}
               >
                 <option value="">Any available doctor</option>
-                {filteredDoctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    Dr. {doctor.name}
-                    {doctor.specialization && ` - ${doctor.specialization}`}
+                {filteredDoctors.map((doctor, index) => (
+                  <option key={index} value={doctor.name}>
+                    {doctor.name}
                   </option>
                 ))}
               </select>
