@@ -7,6 +7,7 @@ import { AboutPage } from './presentation/pages/AboutPage';
 import { BookingPage } from './presentation/pages/BookingPage';
 import { UploadPage } from './presentation/pages/UploadPage';
 import { ProfilePage } from './presentation/pages/ProfilePage';
+import { GlobalLoading } from './presentation/components/GlobalLoading';
 
 function App() {
   const { user, loading } = useAuth();
@@ -43,6 +44,8 @@ function App() {
       {currentPage === 'profile' && user && <ProfilePage user={user} />}
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+
+      <GlobalLoading />
     </div>
   );
 }

@@ -6,6 +6,37 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+type LoadingListener = (isLoading: boolean) => void;
+
+let pendingRequests = 0;
+const loadingListeners = new Set<LoadingListener>();
+
+export const loadingEvents = {
+  subscribe(listener: LoadingListener) {
+    loadingListeners.add(listener);
+    // trả về hàm để hủy
+    return () => loadingListeners.delete(listener);
+  },
+  set(isLoading: boolean) {
+    loadingListeners.forEach((l) => l(isLoading));
+  },
+};
+
+const startGlobalLoading = () => {
+  pendingRequests += 1;
+  if (pendingRequests === 1) {
+    loadingEvents.set(true);
+  }
+};
+
+const stopGlobalLoading = () => {
+  pendingRequests = Math.max(0, pendingRequests - 1);
+  if (pendingRequests === 0) {
+    loadingEvents.set(false);
+  }
+};
+
+
 class ApiClient {
   private baseUrl: string;
 
@@ -31,7 +62,7 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers || {}),
     };
 
     const token = this.getToken();
@@ -39,6 +70,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    startGlobalLoading();
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
@@ -54,6 +86,8 @@ class ApiClient {
       return data;
     } catch (error: any) {
       throw new Error(error.message || 'Network error');
+    } finally {
+      stopGlobalLoading();
     }
   }
 
@@ -79,7 +113,11 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
-  async uploadFile<T>(endpoint: string, file: File, additionalData?: any): Promise<ApiResponse<T>> {
+  async uploadFile<T>(
+    endpoint: string,
+    file: File,
+    additionalData?: any
+  ): Promise<ApiResponse<T>> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -95,6 +133,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    startGlobalLoading();
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
@@ -111,6 +150,8 @@ class ApiClient {
       return data;
     } catch (error: any) {
       throw new Error(error.message || 'Network error');
+    } finally {
+      stopGlobalLoading();
     }
   }
 }
