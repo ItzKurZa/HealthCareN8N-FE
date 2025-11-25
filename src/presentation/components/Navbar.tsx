@@ -1,4 +1,4 @@
-import { Home, Calendar, Upload, User, LogOut, Activity } from 'lucide-react';
+import { Home, Calendar, Upload, User, LogOut, Activity, Phone } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 
 interface NavbarProps {
@@ -64,6 +64,16 @@ export const Navbar = ({ currentPage, onNavigate, user }: NavbarProps) => {
             >
               <User className="w-5 h-5" />
               <span className="font-medium">Profile</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('voicecalls')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                currentPage === 'voicecalls' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              <Phone className="w-5 h-5" />
+              <span className="font-medium">Voice Calls</span>
             </button>
 
             {user && (

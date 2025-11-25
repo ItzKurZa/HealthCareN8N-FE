@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khảo Sát Hài Lòng - Chọn Phương Thức</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hover-scale {
+            transition: transform 0.2s ease-in-out;
+        }
+        .hover-scale:hover {
+            transform: translateY(-4px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-pink-50 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-4">
+                Khảo Sát Hài Lòng Bệnh Viện
+            </h1>
+            <p class="text-gray-600 text-lg">
+                Chọn phương thức khảo sát phù hợp với bạn
+            </p>
+        </div>
+
+        <!-- Selection Cards -->
+        <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+            <!-- Voice Call Option -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 hover-scale cursor-pointer border-2 border-transparent hover:border-purple-500 transition-all" onclick="selectVoice()">
+                <div class="flex flex-col items-center text-center">
+                    <!-- Icon -->
+                    <div class="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-800 mb-3">Khảo Sát Qua Điện Thoại</h2>
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        Trả lời các câu hỏi khảo sát thông qua cuộc gọi điện thoại với AI Assistant. Tiện lợi và nhanh chóng.
+                    </p>
+                    
+                    <!-- Benefits -->
+                    <ul class="text-left space-y-2 mb-6 w-full">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-purple-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Không cần nhập tay</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-purple-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Hoàn thành nhanh 3-5 phút</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-purple-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Thuận tiện cho mọi lứa tuổi</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold py-4 px-6 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all shadow-md hover:shadow-lg">
+                        Bắt Đầu Cuộc Gọi
+                    </button>
+                </div>
+            </div>
+
+            <!-- Web Form Option -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 hover-scale cursor-pointer border-2 border-transparent hover:border-pink-500 transition-all" onclick="selectForm()">
+                <div class="flex flex-col items-center text-center">
+                    <!-- Icon -->
+                    <div class="w-24 h-24 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold text-gray-800 mb-3">Điền Form Trực Tuyến</h2>
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        Điền vào biểu mẫu khảo sát trực tuyến với các câu hỏi chi tiết. Có thể tạm dừng và tiếp tục sau.
+                    </p>
+                    
+                    <!-- Benefits -->
+                    <ul class="text-left space-y-2 mb-6 w-full">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-pink-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Kiểm soát hoàn toàn</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-pink-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Xem lại trước khi gửi</span>
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-pink-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-gray-700">Phản hồi chi tiết hơn</span>
+                        </li>
+                    </ul>
+                    
+                    <button class="w-full bg-gradient-to-r from-pink-500 to-pink-600 text-white font-semibold py-4 px-6 rounded-xl hover:from-pink-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg">
+                        Điền Form Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="max-w-3xl mx-auto mt-12 text-center">
+            <p class="text-gray-500 text-sm">
+                Cả hai phương thức đều an toàn và bảo mật. Thông tin của bạn sẽ được xử lý theo chính sách bảo mật của bệnh viện.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Get backend URL from environment or use default
+        const BACKEND_URL = 'http://localhost:5000';
+        
+        async function selectVoice() {
+            // Redirect to voice widget page (ElevenLabs widget)
+            const urlParams = new URLSearchParams(window.location.search);
+            const patientId = urlParams.get('patientId') || localStorage.getItem('patientId') || 'DEMO_PATIENT';
+            const appointmentId = urlParams.get('appointmentId') || localStorage.getItem('appointmentId') || 'DEMO_APPT';
+            
+            window.location.href = `/survey-voice-widget.html?patientId=${patientId}&appointmentId=${appointmentId}`;
+        }
+
+        function selectForm() {
+            // Redirect to form page with parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            window.location.href = `/survey-form-tailwind.html?${urlParams.toString()}`;
+        }
+
+        // Auto-fill info if available
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Store patient info in localStorage for later use
+            if (urlParams.get('patientId')) {
+                localStorage.setItem('patientId', urlParams.get('patientId'));
+            }
+            if (urlParams.get('appointmentId')) {
+                localStorage.setItem('appointmentId', urlParams.get('appointmentId'));
+            }
+        });
+    </script>
+</body>
+</html>

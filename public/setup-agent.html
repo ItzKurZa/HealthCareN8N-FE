@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Agent - Bước 1</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 32px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 24px;
+            border-radius: 12px;
+            margin: 24px 0;
+            border-left: 5px solid #667eea;
+        }
+        .step h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 20px;
+        }
+        .step ol {
+            line-height: 2;
+            margin: 16px 0;
+        }
+        .step li {
+            margin: 12px 0;
+        }
+        .code-box {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        .code-box .comment {
+            color: #6a9955;
+        }
+        .code-box .string {
+            color: #ce9178;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 8px 4px;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+        .alert {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-left: 5px solid #17a2b8;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        .alert strong {
+            color: #0c5460;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .input-group button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .input-group button:hover {
+            background: #218838;
+        }
+        .result {
+            display: none;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .result.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Hướng Dẫn Tạo ElevenLabs Agent</h1>
+        
+        <div class="alert">
+            <strong>⚠️ Vấn Đề:</strong> Agent ID hiện tại không hợp lệ. Bạn cần tạo Agent mới trong ElevenLabs.
+        </div>
+
+        <div class="step">
+            <h2>📋 Bước 1: Truy Cập ElevenLabs</h2>
+            <ol>
+                <li>Click vào nút bên dưới để mở ElevenLabs Dashboard</li>
+                <li>Đăng nhập nếu chưa đăng nhập</li>
+            </ol>
+            <a href="https://elevenlabs.io/app/conversational-ai" target="_blank" class="btn">
+                🚀 Mở ElevenLabs Dashboard
+            </a>
+        </div>
+
+        <div class="step">
+            <h2>🤖 Bước 2: Tạo Agent Mới</h2>
+            <ol>
+                <li>Click nút <strong>"Create New Agent"</strong> hoặc <strong>"+ New Agent"</strong></li>
+                <li>Điền thông tin:
+                    <ul>
+                        <li><strong>Name:</strong> Survey Assistant Vietnam</li>
+                        <li><strong>Voice:</strong> Chọn Vietnamese hoặc Multilingual (Aria)</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>📝 Bước 3: Copy System Prompt</h2>
+            <p>Copy đoạn text bên dưới và paste vào ô <strong>"System Prompt"</strong> trong ElevenLabs:</p>
+            <div class="code-box">
+<span class="comment">Bạn là trợ lý AI của bệnh viện, thực hiện khảo sát hài lòng với bệnh nhân.
+
+MỤC TIÊU:
+- Thu thập đánh giá về dịch vụ y tế
+- Thái độ thân thiện, chuyên nghiệp
+- Hoàn thành trong 3-5 phút
+
+LUỒNG HỘI THOẠI:
+
+1. CHÀO HỎI (30 giây)
+"Xin chào! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Tôi là trợ lý AI thực hiện khảo sát ngắn về trải nghiệm của bạn. Cuộc khảo sát chỉ mất 3 phút. Bạn có thể tham gia ngay bây giờ không?"
+
+- Nếu KHÔNG → "Tôi hiểu. Cảm ơn bạn. Chúc bạn một ngày tốt lành!"
+- Nếu CÓ → Tiếp tục câu 2
+
+2. ĐIỂM TỔNG QUAN (NPS)
+"Câu hỏi đầu tiên: Trên thang điểm từ 0 đến 10, bạn đánh giá mức độ hài lòng chung về dịch vụ của bệnh viện là bao nhiêu điểm?"
+
+3. CHẤT LƯỢNG KHÁM CHỮA BỆNH
+"Câu hỏi thứ hai: Bạn đánh giá chất lượng khám chữa bệnh mấy sao, từ 1 đến 5 sao?"
+
+4. CƠ SỞ VẬT CHẤT
+"Câu hỏi thứ ba: Bạn đánh giá cơ sở vật chất như phòng khám, trang thiết bị mấy sao, từ 1 đến 5 sao?"
+
+5. THÁI ĐỘ BÁC SĨ
+"Câu hỏi thứ tư: Bạn đánh giá thái độ của bác sĩ là Tốt, Bình thường, hay Cần cải thiện?"
+
+6. THÁI ĐỘ LỄ TÂN
+"Thái độ của lễ tân là Tốt, Bình thường, hay Cần cải thiện?"
+
+7. THÁI ĐỘ Y TÁ
+"Thái độ của y tá là Tốt, Bình thường, hay Cần cải thiện?"
+
+8. THỜI GIAN CHỜ
+"Bạn có phải chờ đợi lâu không? Nếu có, bạn đánh giá thời gian chờ là Chấp nhận được hay Quá lâu?"
+
+9. GÓP Ý
+"Cuối cùng, bạn có góp ý gì khác để bệnh viện cải thiện dịch vụ không?"
+
+10. KẾT THÚC
+"Cảm ơn bạn rất nhiều đã dành thời gian tham gia khảo sát! Ý kiến của bạn rất quan trọng để chúng tôi cải thiện chất lượng dịch vụ. Chúc bạn sức khỏe và một ngày tốt lành!"
+
+QUY TẮC:
+- Nói chậm, rõ ràng
+- Chờ người dùng trả lời xong mới hỏi câu tiếp theo
+- Nếu không nghe rõ, hỏi lại lịch sự: "Xin lỗi, bạn có thể nói lại được không?"
+- Nếu người dùng không muốn trả lời câu nào, bỏ qua và hỏi câu tiếp theo
+- Tổng thời gian không quá 5 phút</span>
+            </div>
+            <button onclick="copyPrompt()" style="background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 12px;">
+                📋 Copy System Prompt
+            </button>
+        </div>
+
+        <div class="step">
+            <h2>💬 Bước 4: First Message</h2>
+            <p>Paste đoạn này vào ô <strong>"First Message"</strong>:</p>
+            <div class="code-box">
+<span class="string">Xin chào! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Tôi là trợ lý AI thực hiện khảo sát ngắn về trải nghiệm của bạn. Cuộc khảo sát chỉ mất 3 phút. Bạn có thể tham gia ngay bây giờ không?</span>
+            </div>
+            <button onclick="copyFirstMessage()" style="background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 12px;">
+                📋 Copy First Message
+            </button>
+        </div>
+
+        <div class="step">
+            <h2>🔧 Bước 5: Bật Widget & Lấy Agent ID</h2>
+            <ol>
+                <li>Click <strong>"Save"</strong> để lưu Agent</li>
+                <li>Vào tab <strong>"Widget"</strong></li>
+                <li>Bật toggle <strong>"Enable Widget"</strong> hoặc <strong>"Make Public"</strong></li>
+                <li>Copy <strong>Agent ID</strong> (dạng: <code>agent_xxxxxxxxxxxxx</code>)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>🎯 Bước 6: Cập Nhật Agent ID</h2>
+            <p>Paste Agent ID mới vào ô bên dưới:</p>
+            <div class="input-group">
+                <label>Agent ID Mới:</label>
+                <input type="text" id="agentIdInput" placeholder="agent_xxxxxxxxxxxxxxxxxxxxx" />
+                <button onclick="updateAgentId()">✅ Cập Nhật Ngay</button>
+            </div>
+            <div id="result" class="result">
+                <strong>🎉 Thành công!</strong><br>
+                Agent ID đã được lưu. Bây giờ:
+                <ol>
+                    <li>Copy command bên dưới</li>
+                    <li>Mở PowerShell trong VS Code</li>
+                    <li>Paste và chạy command</li>
+                </ol>
+                <div class="code-box" id="command"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyPrompt() {
+            const prompt = `Bạn là trợ lý AI của bệnh viện, thực hiện khảo sát hài lòng với bệnh nhân.
+
+MỤC TIÊU:
+- Thu thập đánh giá về dịch vụ y tế
+- Thái độ thân thiện, chuyên nghiệp
+- Hoàn thành trong 3-5 phút
+
+LUỒNG HỘI THOẠI:
+
+1. CHÀO HỎI (30 giây)
+"Xin chào! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Tôi là trợ lý AI thực hiện khảo sát ngắn về trải nghiệm của bạn. Cuộc khảo sát chỉ mất 3 phút. Bạn có thể tham gia ngay bây giờ không?"
+
+- Nếu KHÔNG → "Tôi hiểu. Cảm ơn bạn. Chúc bạn một ngày tốt lành!"
+- Nếu CÓ → Tiếp tục câu 2
+
+2. ĐIỂM TỔNG QUAN (NPS)
+"Câu hỏi đầu tiên: Trên thang điểm từ 0 đến 10, bạn đánh giá mức độ hài lòng chung về dịch vụ của bệnh viện là bao nhiêu điểm?"
+
+[CHỜ TRẢ LỜI - Ghi nhận số từ 0-10]
+
+3. CHẤT LƯỢNG KHÁM CHỮA BỆNH
+"Câu hỏi thứ hai: Bạn đánh giá chất lượng khám chữa bệnh mấy sao, từ 1 đến 5 sao?"
+
+[CHỜ TRẢ LỜI - Ghi nhận số từ 1-5]
+
+4. CƠ SỞ VẬT CHẤT
+"Câu hỏi thứ ba: Bạn đánh giá cơ sở vật chất như phòng khám, trang thiết bị mấy sao, từ 1 đến 5 sao?"
+
+[CHỜ TRẢ LỜI - Ghi nhận số từ 1-5]
+
+5. THÁI ĐỘ BÁC SĨ
+"Câu hỏi thứ tư: Bạn đánh giá thái độ của bác sĩ là Tốt, Bình thường, hay Cần cải thiện?"
+
+[CHỜ TRẢ LỜI - Ghi nhận: tốt/bình thường/cần cải thiện]
+
+6. THÁI ĐỘ LỄ TÂN
+"Thái độ của lễ tân là Tốt, Bình thường, hay Cần cải thiện?"
+
+[CHỜ TRẢ LỜI]
+
+7. THÁI ĐỘ Y TÁ
+"Thái độ của y tá là Tốt, Bình thường, hay Cần cải thiện?"
+
+[CHỜ TRẢ LỜI]
+
+8. THỜI GIAN CHỜ
+"Bạn có phải chờ đợi lâu không? Nếu có, bạn đánh giá thời gian chờ là Chấp nhận được hay Quá lâu?"
+
+[CHỜ TRẢ LỜI]
+
+9. GÓP Ý
+"Cuối cùng, bạn có góp ý gì khác để bệnh viện cải thiện dịch vụ không?"
+
+[CHỜ TRẢ LỜI - Cho phép trả lời tự do]
+
+10. KẾT THÚC
+"Cảm ơn bạn rất nhiều đã dành thời gian tham gia khảo sát! Ý kiến của bạn rất quan trọng để chúng tôi cải thiện chất lượng dịch vụ. Chúc bạn sức khỏe và một ngày tốt lành!"
+
+QUY TẮC:
+- Nói chậm, rõ ràng
+- Chờ người dùng trả lời xong mới hỏi câu tiếp theo
+- Nếu không nghe rõ, hỏi lại lịch sự: "Xin lỗi, bạn có thể nói lại được không?"
+- Nếu người dùng không muốn trả lời câu nào, bỏ qua và hỏi câu tiếp theo
+- Tổng thời gian không quá 5 phút`;
+            
+            navigator.clipboard.writeText(prompt);
+            alert('✅ Đã copy System Prompt! Paste vào ElevenLabs.');
+        }
+
+        function copyFirstMessage() {
+            const msg = 'Xin chào! Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Tôi là trợ lý AI thực hiện khảo sát ngắn về trải nghiệm của bạn. Cuộc khảo sát chỉ mất 3 phút. Bạn có thể tham gia ngay bây giờ không?';
+            navigator.clipboard.writeText(msg);
+            alert('✅ Đã copy First Message! Paste vào ElevenLabs.');
+        }
+
+        function updateAgentId() {
+            const agentId = document.getElementById('agentIdInput').value.trim();
+            
+            if (!agentId) {
+                alert('❌ Vui lòng nhập Agent ID!');
+                return;
+            }
+            
+            if (!agentId.startsWith('agent_')) {
+                alert('❌ Agent ID phải bắt đầu bằng "agent_"');
+                return;
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('elevenlabs_agent_id', agentId);
+            
+            // Show result
+            const resultDiv = document.getElementById('result');
+            const commandDiv = document.getElementById('command');
+            
+            commandDiv.textContent = `cd C:\\Nam4_Ky1\nnode update-agent-id.js ${agentId}`;
+            resultDiv.classList.add('show');
+            
+            // Scroll to result
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Load saved Agent ID
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedId = localStorage.getItem('elevenlabs_agent_id');
+            if (savedId) {
+                document.getElementById('agentIdInput').value = savedId;
+            }
+        });
+    </script>
+</body>
+</html>

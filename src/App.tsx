@@ -7,6 +7,7 @@ import { AboutPage } from './presentation/pages/AboutPage';
 import { BookingPage } from './presentation/pages/BookingPage';
 import { UploadPage } from './presentation/pages/UploadPage';
 import { ProfilePage } from './presentation/pages/ProfilePage';
+import { VoiceCallPage } from './presentation/pages/VoiceCallPage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -14,7 +15,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleNavigate = (page: string) => {
-    if (!user && ['booking', 'upload', 'profile'].includes(page)) {
+    if (!user && ['booking', 'upload', 'profile', 'voicecalls'].includes(page)) {
       setShowAuthModal(true);
       return;
     }
@@ -41,6 +42,7 @@ function App() {
       {currentPage === 'booking' && user && <BookingPage user={user} />}
       {currentPage === 'upload' && user && <UploadPage user={user} />}
       {currentPage === 'profile' && user && <ProfilePage user={user} />}
+      {currentPage === 'voicecalls' && user && <VoiceCallPage />}
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
