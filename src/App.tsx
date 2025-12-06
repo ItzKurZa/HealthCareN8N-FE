@@ -8,6 +8,8 @@ import { BookingPage } from './presentation/pages/BookingPage';
 import { UploadPage } from './presentation/pages/UploadPage';
 import { ProfilePage } from './presentation/pages/ProfilePage';
 import { VoiceCallPage } from './presentation/pages/VoiceCallPage';
+import { DashboardPage } from './presentation/pages/DashboardPage';
+import { CustomerCarePage } from './presentation/pages/CustomerCarePage';
 
 function App() {
   const { user, loading } = useAuth();
@@ -43,6 +45,8 @@ function App() {
       {currentPage === 'upload' && user && <UploadPage user={user} />}
       {currentPage === 'profile' && user && <ProfilePage user={user} />}
       {currentPage === 'voicecalls' && user && <VoiceCallPage />}
+      {currentPage === 'dashboard' && <DashboardPage />}
+      {currentPage === 'customercare' && <CustomerCarePage />}
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>

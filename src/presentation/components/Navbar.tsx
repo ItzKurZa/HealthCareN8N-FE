@@ -1,4 +1,4 @@
-import { Home, Calendar, Upload, User, LogOut, Activity, Phone } from 'lucide-react';
+import { Home, Calendar, Upload, User, LogOut, Activity, Phone, LayoutDashboard, HeadphonesIcon } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 
 interface NavbarProps {
@@ -74,6 +74,26 @@ export const Navbar = ({ currentPage, onNavigate, user }: NavbarProps) => {
             >
               <Phone className="w-5 h-5" />
               <span className="font-medium">Voice Calls</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('customercare')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                currentPage === 'customercare' ? 'text-purple-600 bg-purple-50' : 'text-gray-600 hover:text-purple-600'
+              }`}
+            >
+              <HeadphonesIcon className="w-5 h-5" />
+              <span className="font-medium">CSKH</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                currentPage === 'dashboard' ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:text-green-600'
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              <span className="font-medium">Dashboard</span>
             </button>
 
             {user && (
