@@ -22,9 +22,11 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const loadData = async () => {
     setLoading(true);
     try {
+      // Sử dụng user.id hoặc user.cccd tùy theo backend yêu cầu
+      const userId = user.id || user.cccd || user.user_id;
       const [filesData, bookingsData] = await Promise.all([
-        medicalService.getUserFiles(user.id),
-        bookingService.getUserBookings(user.id),
+        medicalService.getUserFiles(userId),
+        bookingService.getUserBookings(userId),
       ]);
       setMedicalFiles(filesData);
       setBookings(bookingsData);

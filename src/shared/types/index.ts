@@ -51,3 +51,16 @@ export interface Doctor {
   specialization?: string;
   available?: boolean;
 }
+
+export interface UserRole {
+  role: 'patient' | 'doctor' | 'admin';
+}
+
+export interface PatientStatistics {
+  totalPatients: number;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+}
