@@ -3,6 +3,7 @@ import { User, FileText, Calendar, Trash2, Download } from 'lucide-react';
 import { medicalService } from '../../infrastructure/medical/medicalService';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { Chatbot } from '../components/Chatbot';
+import { useToast } from '../contexts/ToastContext';
 import type { MedicalFile, Booking } from '../../shared/types';
 
 interface ProfilePageProps {
@@ -10,6 +11,7 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage = ({ user }: ProfilePageProps) => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'files' | 'bookings'>('files');
   const [medicalFiles, setMedicalFiles] = useState<MedicalFile[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -38,23 +40,25 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   };
 
   const handleDeleteFile = async (fileId: string) => {
-    if (window.confirm('Are you sure you want to delete this file?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa file này?')) {
       try {
         await medicalService.deleteFile(fileId);
         setMedicalFiles(medicalFiles.filter((f) => f.id !== fileId));
-      } catch (error) {
-        console.error('Error deleting file:', error);
+        showToast('Xóa file thành công!', 'success');
+      } catch (error: any) {
+        showToast(error.message || 'Xóa file thất bại', 'error');
       }
     }
   };
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (window.confirm('Are you sure you want to cancel this appointment?')) {
+    if (window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
       try {
         await bookingService.cancelBooking(bookingId);
         setBookings(bookings.map((b) => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
-      } catch (error) {
-        console.error('Error cancelling booking:', error);
+        showToast('Hủy lịch hẹn thành công!', 'success');
+      } catch (error: any) {
+        showToast(error.message || 'Hủy lịch hẹn thất bại', 'error');
       }
     }
   };

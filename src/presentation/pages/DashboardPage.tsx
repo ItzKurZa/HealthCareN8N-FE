@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Calendar, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { adminService, type Statistics } from '../../infrastructure/admin/adminService';
+import { useToast } from '../contexts/ToastContext';
 
 interface DashboardPageProps {
   user: any;
 }
 
 export const DashboardPage = ({ user }: DashboardPageProps) => {
+  const { showToast } = useToast();
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +24,9 @@ export const DashboardPage = ({ user }: DashboardPageProps) => {
       const stats = await adminService.getStatistics();
       setStatistics(stats);
     } catch (err: any) {
-      setError(err.message || 'Failed to load statistics');
+      const errorMsg = err.message || 'Không thể tải thống kê';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

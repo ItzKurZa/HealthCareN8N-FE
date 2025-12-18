@@ -50,4 +50,38 @@ export const bookingService = {
     }
     return response.booking;
   },
+
+  async cancelBookingByCode(bookingCode: string): Promise<Booking> {
+    const response = await apiClient.put<{ booking: Booking }>(`/booking/code/${bookingCode}`, {
+      status: 'cancelled',
+    });
+    if (!response.booking) {
+      throw new Error('Failed to cancel booking');
+    }
+    return response.booking;
+  },
+
+  async updateBookingByCode(bookingCode: string, updates: Partial<Booking>): Promise<Booking> {
+    const response = await apiClient.put<{ booking: Booking }>(`/booking/code/${bookingCode}`, updates);
+    if (!response.booking) {
+      throw new Error('Failed to update booking');
+    }
+    return response.booking;
+  },
+
+  async getBookingById(bookingId: string): Promise<Booking> {
+    const response = await apiClient.get<{ booking: Booking }>(`/booking/check-in/${bookingId}`);
+    if (!response.booking) {
+      throw new Error('Không tìm thấy đặt lịch');
+    }
+    return response.booking;
+  },
+
+  async checkInBooking(bookingId: string): Promise<Booking> {
+    const response = await apiClient.post<{ booking: Booking; message?: string }>(`/booking/check-in/${bookingId}`);
+    if (!response.booking) {
+      throw new Error('Check-in thất bại');
+    }
+    return response.booking;
+  },
 };

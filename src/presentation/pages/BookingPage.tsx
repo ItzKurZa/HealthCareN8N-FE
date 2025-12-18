@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { Chatbot } from '../components/Chatbot';
+import { useToast } from '../contexts/ToastContext';
 import type { Department, Doctor } from '../../shared/types';
 
 interface BookingPageProps {
@@ -9,6 +10,7 @@ interface BookingPageProps {
 }
 
 export const BookingPage = ({ user }: BookingPageProps) => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     department: '',
     doctorId: '',
@@ -22,8 +24,6 @@ export const BookingPage = ({ user }: BookingPageProps) => {
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
 
   const timeSlots = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
@@ -57,7 +57,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
       setDepartments(depts);
       setDoctors(docs);
     } catch (err: any) {
-      setError('Failed to load departments and doctors');
+      showToast('Không thể tải danh sách khoa và bác sĩ', 'error');
     } finally {
       setDataLoading(false);
     }
@@ -65,8 +65,6 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
     setLoading(true);
 
     try {
@@ -77,7 +75,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
       // Nếu backend dùng id, thì dùng id
       const userId = user.id || user.cccd || user.user_id;
       
-      await bookingService.createBooking({
+      const bookingResult = await bookingService.createBooking({
         user_id: userId,
         full_name: user.fullname || user.user_metadata?.full_name || user.full_name || '',
         email: user.email || '',
@@ -89,7 +87,10 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         reason: formData.reason || 'Khám bệnh',
         notes: formData.notes || undefined,
       });
-      setSuccess(true);
+      
+      const bookingCode = bookingResult.submission_id || bookingResult.id;
+      showToast(`Đặt lịch thành công! Mã đặt lịch của bạn: ${bookingCode}. Chúng tôi sẽ liên hệ với bạn sớm để xác nhận.`, 'success');
+      
       setFormData({
         department: '',
         doctorId: '',
@@ -99,7 +100,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         notes: '',
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to create booking 1');
+      showToast(err.message || 'Đặt lịch thất bại. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }
@@ -124,18 +125,6 @@ export const BookingPage = ({ user }: BookingPageProps) => {
             <Calendar className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">Đặt Lịch Khám</h1>
           </div>
-
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
-              Đặt lịch thành công! Chúng tôi sẽ liên hệ với bạn sớm để xác nhận.
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

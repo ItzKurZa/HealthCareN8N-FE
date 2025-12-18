@@ -19,6 +19,7 @@ export interface MedicalFile {
 
 export interface Booking {
   id: string;
+  submission_id?: string; // Mã đặt lịch chính là submissionId
   user_id: string;
   department: string;
   doctor_name?: string;

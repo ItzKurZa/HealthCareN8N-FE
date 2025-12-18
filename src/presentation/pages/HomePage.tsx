@@ -1,4 +1,4 @@
-import { Calendar, Upload, FileText, Clock, Shield, Users } from 'lucide-react';
+import { Calendar, Upload, FileText, Clock, Shield, Users, Search } from 'lucide-react';
 
 interface HomePageProps {
   onNavigate: (page: string) => void;
@@ -24,6 +24,13 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
               Book Appointment
             </button>
             <button
+              onClick={() => onNavigate('lookup')}
+              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition font-medium text-lg flex items-center space-x-2"
+            >
+              <Search className="w-5 h-5" />
+              <span>Tra Cứu Lịch</span>
+            </button>
+            <button
               onClick={() => onNavigate('about')}
               className="bg-white text-blue-600 px-8 py-3 rounded-lg border-2 border-blue-600 hover:bg-blue-50 transition font-medium text-lg"
             >
@@ -45,11 +52,11 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
 
           <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition">
             <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-              <Upload className="w-8 h-8 text-green-600" />
+              <Search className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Medical Records</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Lookup Appointment</h3>
             <p className="text-gray-600">
-              Securely upload and manage your medical documents. Access your health history anytime, anywhere.
+              Easily search and view your appointment details using your booking ID. Quick access to your schedule information.
             </p>
           </div>
 

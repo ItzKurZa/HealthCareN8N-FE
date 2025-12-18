@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, Filter, Calendar, Phone, Mail, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { adminService, type PatientBooking } from '../../infrastructure/admin/adminService';
+import { useToast } from '../contexts/ToastContext';
 
 interface PatientsPageProps {
   user: any;
 }
 
 export const PatientsPage = ({ user }: PatientsPageProps) => {
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState<PatientBooking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<PatientBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,9 @@ export const PatientsPage = ({ user }: PatientsPageProps) => {
       const uniqueDepartments = Array.from(new Set(data.map((b) => b.department)));
       setDepartments(uniqueDepartments);
     } catch (err: any) {
-      setError(err.message || 'Failed to load bookings');
+      const errorMsg = err.message || 'Không thể tải danh sách lịch hẹn';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -70,8 +74,16 @@ export const PatientsPage = ({ user }: PatientsPageProps) => {
       setBookings(
         bookings.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
       );
+      const statusMessages: Record<string, string> = {
+        confirmed: 'Xác nhận lịch hẹn thành công!',
+        cancelled: 'Hủy lịch hẹn thành công!',
+        completed: 'Hoàn thành lịch hẹn thành công!',
+      };
+      showToast(statusMessages[newStatus] || 'Cập nhật trạng thái thành công!', 'success');
     } catch (err: any) {
-      setError(err.message || 'Failed to update booking status');
+      const errorMsg = err.message || 'Cập nhật trạng thái thất bại';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     }
   };
 

@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
+import { useToast } from '../contexts/ToastContext';
 
 interface AuthModalProps {
   onClose: () => void;
+  onAuthSuccess?: () => void;
 }
 
-export const AuthModal = ({ onClose }: AuthModalProps) => {
+export const AuthModal = ({ onClose, onAuthSuccess }: AuthModalProps) => {
+  const { showToast } = useToast();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,22 +17,26 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
   const [phone, setPhone] = useState('');
   const [cccd, setCCCD] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
       if (isSignUp) {
         await authService.signUp(email, password, fullName, phone, cccd);
+        showToast('Đăng ký thành công!', 'success');
       } else {
         await authService.signIn(email, password);
+        showToast('Đăng nhập thành công!', 'success');
+      }
+      // Refresh auth state immediately after successful login/signup
+      if (onAuthSuccess) {
+        await onAuthSuccess();
       }
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      showToast(err.message || 'Đăng nhập/Đăng ký thất bại', 'error');
     } finally {
       setLoading(false);
     }
@@ -118,12 +125,6 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
               required
             />
           </div>
-
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-              {error}
-            </div>
-          )}
 
           <button
             type="submit"

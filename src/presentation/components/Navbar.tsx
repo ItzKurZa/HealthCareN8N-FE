@@ -1,19 +1,27 @@
-import { Home, Calendar, Upload, User, LogOut, Activity, BarChart3, Users, Clock } from 'lucide-react';
+import { Home, Calendar, Upload, User, LogOut, Activity, BarChart3, Users, Clock, Search } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
+import { useToast } from '../contexts/ToastContext';
 
 interface NavbarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
   user: any;
   userRole?: string | null;
+  onSignOutSuccess?: () => void;
 }
 
-export const Navbar = ({ currentPage, onNavigate, user, userRole }: NavbarProps) => {
+export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSuccess }: NavbarProps) => {
+  const { showToast } = useToast();
   const handleSignOut = async () => {
     try {
       await authService.signOut();
-    } catch (error) {
-      console.error('Sign out error:', error);
+      showToast('Đăng xuất thành công!', 'success');
+      // Refresh auth state immediately after successful signout
+      if (onSignOutSuccess) {
+        await onSignOutSuccess();
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Đăng xuất thất bại', 'error');
     }
   };
 
@@ -35,6 +43,16 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole }: NavbarProps)
             >
               <Home className="w-5 h-5" />
               <span className="font-medium">Home</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('lookup')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+              }`}
+            >
+              <Search className="w-5 h-5" />
+              <span className="font-medium">Tra Cứu</span>
             </button>
 
             <button

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Settings } from 'lucide-react';
 import { doctorService, type PatientBooking } from '../../infrastructure/doctor/doctorService';
+import { useToast } from '../contexts/ToastContext';
 
 interface SchedulePageProps {
   user: any;
 }
 
 export const SchedulePage = ({ user }: SchedulePageProps) => {
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState<PatientBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -40,7 +42,9 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
       const data = await doctorService.getDoctorBookings(doctorName, filters);
       setBookings(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load bookings');
+      const errorMsg = err.message || 'Không thể tải lịch hẹn';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }
@@ -52,8 +56,16 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
       setBookings(
         bookings.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
       );
+      const statusMessages: Record<string, string> = {
+        confirmed: 'Xác nhận lịch hẹn thành công!',
+        cancelled: 'Hủy lịch hẹn thành công!',
+        completed: 'Hoàn thành lịch hẹn thành công!',
+      };
+      showToast(statusMessages[newStatus] || 'Cập nhật trạng thái thành công!', 'success');
     } catch (err: any) {
-      setError(err.message || 'Failed to update booking status');
+      const errorMsg = err.message || 'Cập nhật trạng thái thất bại';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     }
   };
 
