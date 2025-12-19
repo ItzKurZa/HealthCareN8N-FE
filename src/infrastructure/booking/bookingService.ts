@@ -43,9 +43,6 @@ export const bookingService = {
     console.log('🌐 Fetching fresh data from server...');
     const response = await apiClient.get<{ data: DeptDoctorResult }>('/booking/departments-doctors');
     
-    // Xử lý dữ liệu trả về (cấu trúc Backend trả về { success: true, data: { departments, doctors } })
-    // Lưu ý: response.data ở đây là body của response, bên trong có thuộc tính .data nữa
-    // Tùy vào cách apiClient xử lý, ta lấy lớp data trong cùng.
     const result = response.data?.data || (response.data as any); 
 
     const cleanResult: DeptDoctorResult = {
@@ -66,5 +63,16 @@ export const bookingService = {
   async getUserBookings(userId: string): Promise<Booking[]> {
     const response = await apiClient.get<{ result: { bookings: Booking[] } }>(`/booking/${userId}`);
     return response.data?.result?.bookings || [];
+  },
+
+  async cancelBooking(bookingId: string): Promise<boolean> {
+    try {
+      // Gọi API xuống Backend để hủy
+      await apiClient.post(`/booking/cancel/${bookingId}`);
+      return true;
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      throw error;
+    }
   },
 };

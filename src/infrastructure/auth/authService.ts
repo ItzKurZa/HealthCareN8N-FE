@@ -78,7 +78,6 @@ export const authService = {
     } catch (error) {
       console.warn("Logout API failed, but clearing local token anyway.");
     } finally {
-      // 1. Xóa sạch mọi token lưu trong máy
       apiClient.setToken(null);
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('current_page');
@@ -106,6 +105,17 @@ export const authService = {
          apiClient.setToken(null);
       }
       return null;
+    }
+  },
+
+  async getFullProfileData(userId: string) {
+    try {
+        const response = await apiClient.get<any>(`/account/profile-data/${userId}`);
+        const data = (response as any).data; 
+        return data;
+    } catch (error) {
+        console.error("Error fetching full profile data:", error);
+        throw error;
     }
   },
 

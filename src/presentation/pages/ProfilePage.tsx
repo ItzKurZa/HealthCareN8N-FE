@@ -3,6 +3,7 @@ import { User, FileText, Calendar, Trash2, Download } from 'lucide-react';
 import { medicalService } from '../../infrastructure/medical/medicalService';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { Chatbot } from '../components/Chatbot';
+import { authService } from '../../infrastructure/auth/authService'; // Đảm bảo import này
 import type { MedicalFile, Booking } from '../../shared/types';
 
 interface ProfilePageProps {
@@ -16,8 +17,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Chỉ tải dữ liệu nếu có user và cccd
-    if (user?.cccd) {
+    if (user?.id || user?.uid) {
       loadData();
     }
   }, [user]);
@@ -25,12 +25,41 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [filesData, bookingsData] = await Promise.all([
-        medicalService.getUserFiles(user.id),
-        bookingService.getUserBookings(user.id),
-      ]);
-      setMedicalFiles(filesData);
-      setBookings(bookingsData);
+      const userId = user.id || user.uid;
+
+      const result = await authService.getFullProfileData(userId);
+      
+      const data = result.data || result; 
+
+      if (data.medical_files) {
+        const mappedFiles: MedicalFile[] = data.medical_files.map((item: any) => ({
+          id: item.id || item.fileId,
+          user_id: userId,
+          file_name: item.fileName,
+          file_url: item.Link,
+          file_type: item.mimeType || 'unknown',
+          file_size: 0,
+          description: item.Summary || '',
+          uploaded_at: item.UploadDate
+        }));
+        setMedicalFiles(mappedFiles);
+      }
+
+      if (data.bookings) {
+        const mappedBookings: Booking[] = data.bookings.map((item: any) => ({
+          id: item.id,
+          user_id: userId,
+          department: item.department || item.department_name || 'General',
+          doctor_name: item.doctor_name,
+          appointment_date: item.appointment_date,
+          appointment_time: item.appointment_time,
+          status: item.status || 'pending',
+          notes: item.notes,
+          created_at: item.createdAt || new Date().toISOString()
+        }));
+        setBookings(mappedBookings);
+      }
+
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -52,9 +81,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const handleCancelBooking = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        // Hàm này giờ đã tồn tại trong service
         await bookingService.cancelBooking(bookingId);
-        // Cập nhật giao diện ngay lập tức
         setBookings(bookings.map((b) => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
       } catch (error) {
         console.error('Error cancelling booking:', error);
@@ -64,7 +91,12 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'N/A';
+    // Xử lý trường hợp dateString là object Timestamp của Firestore (nếu chưa được convert ở backend)
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -96,7 +128,6 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
                 <User className="w-12 h-12" />
               </div>
               <div>
-                {/* Hiển thị tên và email */}
                 <h1 className="text-3xl font-bold">{user.fullname || user.user_metadata?.full_name || 'User'}</h1>
                 <p className="text-blue-100">{user.email}</p>
                 <p className="text-blue-200 text-sm mt-1">CCCD: {user.cccd}</p>
@@ -136,7 +167,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
           <div className="p-8">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-gray-600">Loading data for CCCD: {user.cccd}...</p>
+                <p className="text-gray-600">Loading data...</p>
               </div>
             ) : (
               <>
@@ -165,7 +196,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
                                 )}
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <span>Uploaded: {formatDate(file.uploaded_at)}</span>
-                                  <span>Size: {(file.file_size / 1024).toFixed(2)} KB</span>
+                                  {file.file_size > 0 && <span>Size: {(file.file_size / 1024).toFixed(2)} KB</span>}
                                 </div>
                               </div>
                             </div>

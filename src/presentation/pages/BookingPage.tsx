@@ -69,7 +69,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
       const selectedDoctor = doctors.find((d) => d.name === formData.doctorId);
 
       await bookingService.createBooking({
-        user_id: user.cccd,
+        cccd: user.cccd,
         department: formData.department,
         doctor_name: selectedDoctor?.name || undefined,
         appointment_date: formData.appointmentDate,

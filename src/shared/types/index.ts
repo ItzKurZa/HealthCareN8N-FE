@@ -21,12 +21,11 @@ export interface MedicalFile {
 
 export interface Booking {
   id: string;
-  user_id: string;
+  cccd: string;
   department: string;
   doctor_name?: string;
   appointment_date: string;
   appointment_time: string;
-  // Tôi bỏ 'reason' đi theo ý bạn, nhớ xóa trong BookingPage nhé
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
   created_at: string;
