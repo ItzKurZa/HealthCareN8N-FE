@@ -25,10 +25,9 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // SỬA: Thay user.id bằng user.cccd
       const [filesData, bookingsData] = await Promise.all([
-        medicalService.getUserFiles(user.cccd),
-        bookingService.getUserBookings(user.cccd),
+        medicalService.getUserFiles(user.id),
+        bookingService.getUserBookings(user.id),
       ]);
       setMedicalFiles(filesData);
       setBookings(bookingsData);

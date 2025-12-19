@@ -12,12 +12,12 @@ export const bookingService = {
     if (!response.data?.booking) {
       throw new Error('Failed to create booking');
     }
-    return response.data.booking; 
+    return response.data.booking;
   },
 
   async getUserBookings(userId: string): Promise<Booking[]> {
-    const response = await apiClient.get<{ bookings: Booking[] }>(`/booking/user/${userId}`);
-    return response.data?.bookings || [];
+    const response = await apiClient.get<{ result: { bookings: Booking[] } }>(`/booking/${userId}`);
+    return response.data?.result?.bookings || [];
   },
 
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<Booking> {
@@ -39,9 +39,9 @@ export const bookingService = {
       const response = await apiClient.get<DeptAndDocResponse>('/booking/departments-doctors');
       const data = response.data;
 
-      return { 
-        departments: data?.departments || [], 
-        doctors: data?.doctors || [] 
+      return {
+        departments: data?.departments || [],
+        doctors: data?.doctors || []
       };
     } catch (err) {
       console.error('❌ Error fetching departments and doctors:', err);

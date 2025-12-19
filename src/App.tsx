@@ -18,12 +18,11 @@ function App() {
   // 4. Cấu hình Interceptor để xử lý khi token hết hạn (401)
   useEffect(() => {
     apiClient.setupInterceptors(() => {
-      // Khi API báo lỗi 401 Unauthorized:
       console.log('Phiên đăng nhập hết hạn, đang đăng xuất...');
 
-      if (logout) logout(); // Xóa state user trong React
-      setCurrentPage('home'); // Quay về trang chủ (hoặc giữ nguyên tùy bạn)
-      setShowAuthModal(true); // Hiện bảng đăng nhập để người dùng login lại ngay
+      if (logout) logout();
+      setCurrentPage('home');
+      setShowAuthModal(true);
     });
   }, [logout]);
 
