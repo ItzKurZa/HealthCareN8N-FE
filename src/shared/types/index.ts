@@ -1,8 +1,10 @@
 export interface User {
   id: string;
+  cccd: string;
   email: string;
-  full_name?: string;
+  fullname?: string;
   phone?: string;
+  role?: string;
   created_at: string;
 }
 
@@ -24,7 +26,7 @@ export interface Booking {
   doctor_name?: string;
   appointment_date: string;
   appointment_time: string;
-  reason: string;
+  // Tôi bỏ 'reason' đi theo ý bạn, nhớ xóa trong BookingPage nhé
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
   created_at: string;

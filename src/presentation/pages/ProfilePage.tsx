@@ -16,15 +16,19 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    // Chỉ tải dữ liệu nếu có user và cccd
+    if (user?.cccd) {
+      loadData();
+    }
   }, [user]);
 
   const loadData = async () => {
     setLoading(true);
     try {
+      // SỬA: Thay user.id bằng user.cccd
       const [filesData, bookingsData] = await Promise.all([
-        medicalService.getUserFiles(user.id),
-        bookingService.getUserBookings(user.id),
+        medicalService.getUserFiles(user.cccd),
+        bookingService.getUserBookings(user.cccd),
       ]);
       setMedicalFiles(filesData);
       setBookings(bookingsData);
@@ -49,10 +53,13 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
   const handleCancelBooking = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
+        // Hàm này giờ đã tồn tại trong service
         await bookingService.cancelBooking(bookingId);
+        // Cập nhật giao diện ngay lập tức
         setBookings(bookings.map((b) => b.id === bookingId ? { ...b, status: 'cancelled' } : b));
       } catch (error) {
         console.error('Error cancelling booking:', error);
+        alert('Failed to cancel booking. Please try again.');
       }
     }
   };
@@ -90,8 +97,10 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
                 <User className="w-12 h-12" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">{user.user_metadata?.full_name || 'User'}</h1>
+                {/* Hiển thị tên và email */}
+                <h1 className="text-3xl font-bold">{user.fullname || user.user_metadata?.full_name || 'User'}</h1>
                 <p className="text-blue-100">{user.email}</p>
+                <p className="text-blue-200 text-sm mt-1">CCCD: {user.cccd}</p>
               </div>
             </div>
           </div>
@@ -100,11 +109,10 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
             <div className="flex">
               <button
                 onClick={() => setActiveTab('files')}
-                className={`flex-1 px-6 py-4 font-medium transition ${
-                  activeTab === 'files'
+                className={`flex-1 px-6 py-4 font-medium transition ${activeTab === 'files'
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-600 hover:text-blue-600'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center space-x-2">
                   <FileText className="w-5 h-5" />
@@ -113,11 +121,10 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
               </button>
               <button
                 onClick={() => setActiveTab('bookings')}
-                className={`flex-1 px-6 py-4 font-medium transition ${
-                  activeTab === 'bookings'
+                className={`flex-1 px-6 py-4 font-medium transition ${activeTab === 'bookings'
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-600 hover:text-blue-600'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-center space-x-2">
                   <Calendar className="w-5 h-5" />
@@ -130,7 +137,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
           <div className="p-8">
             {loading ? (
               <div className="text-center py-12">
-                <p className="text-gray-600">Loading...</p>
+                <p className="text-gray-600">Loading data for CCCD: {user.cccd}...</p>
               </div>
             ) : (
               <>
@@ -225,9 +232,6 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
                                   <span className="font-medium">Time:</span>{' '}
                                   {booking.appointment_time}
                                 </p>
-                                <p>
-                                  <span className="font-medium">Reason:</span> {booking.reason}
-                                </p>
                                 {booking.notes && (
                                   <p>
                                     <span className="font-medium">Notes:</span> {booking.notes}
@@ -255,7 +259,7 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
         </div>
       </div>
 
-      <Chatbot user={user}/>
+      <Chatbot user={user} />
     </div>
   );
 };

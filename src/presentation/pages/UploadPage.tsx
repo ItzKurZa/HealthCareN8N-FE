@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Upload, FileText, CheckCircle } from 'lucide-react';
 import { medicalService } from '../../infrastructure/medical/medicalService';
 import { Chatbot } from '../components/Chatbot';
-import type { MedicalFile } from '../../shared/types';
 
 interface UploadPageProps {
   user: any;

@@ -11,11 +11,12 @@ interface BookingPageProps {
 export const BookingPage = ({ user }: BookingPageProps) => {
   const [formData, setFormData] = useState({
     department: '',
-    doctorId: '',
+    doctorId: '', // Lưu ý: Biến này nên lưu ID hoặc Name tùy vào logic backend, ở đây ta sẽ dùng Name để khớp logic cũ
     appointmentDate: '',
     appointmentTime: '',
     notes: '',
   });
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
@@ -32,10 +33,12 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   useEffect(() => {
     loadDepartmentsAndDoctors();
-  },[]);
+  }, []);
 
   useEffect(() => {
     if (formData.department) {
+      // SỬA: Giả định Department là object có id. Nếu dept là string, logic này cần sửa lại.
+      // Ở đây ta giả định Department có field 'id' hoặc 'name'
       const filtered = doctors.filter(
         (doc) => doc.department_id === formData.department
       );
@@ -67,17 +70,16 @@ export const BookingPage = ({ user }: BookingPageProps) => {
     try {
       const selectedDoctor = doctors.find((d) => d.name === formData.doctorId);
 
+      // SỬA ĐỔI TẠI ĐÂY
       await bookingService.createBooking({
         user_id: user.cccd,
-        full_name: user.fullname,
-        email: user.email,
-        phone: user.phone,
         department: formData.department,
         doctor_name: selectedDoctor?.name || undefined,
         appointment_date: formData.appointmentDate,
         appointment_time: formData.appointmentTime,
         notes: formData.notes || undefined,
       });
+
       setSuccess(true);
       setFormData({
         department: '',
@@ -87,7 +89,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         notes: '',
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to create booking 1');
+      setError(err.message || 'Failed to create booking');
     } finally {
       setLoading(false);
     }
@@ -137,9 +139,10 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                 required
               >
                 <option value="">Select a department</option>
-                {departments.map((dept, index) => (
-                  <option key={index} value={dept}>
-                    {dept}
+                {/* SỬA: Truy cập vào thuộc tính của object department (ví dụ .id và .name) */}
+                {departments.map((dept: any, index) => (
+                  <option key={index} value={dept.id || dept.name || dept}>
+                    {dept.name || dept}
                   </option>
                 ))}
               </select>
@@ -229,7 +232,8 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         </div>
       </div>
 
-      <Chatbot />
+      {/* SỬA: Truyền prop user vào Chatbot */}
+      <Chatbot user={user} />
     </div>
   );
 };

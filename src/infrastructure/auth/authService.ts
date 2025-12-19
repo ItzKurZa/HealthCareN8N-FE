@@ -1,17 +1,32 @@
 import { apiClient } from '../../config/api';
 
-interface AuthResponse {
-  idToken: string;
-  refreshToken?: string;
-  expiresIn?: string;
-  localId?: string;
-  email?: string;
+// 1. Định nghĩa rõ kiểu dữ liệu trả về từ API để code sạch hơn
+interface SignUpResult {
+  token?: string;
+  auth?: {
+    idToken: string;
+  };
   [key: string]: any;
+}
+
+interface SignInResult {
+  auth: {
+    idToken: string;
+    refreshToken?: string;
+    expiresIn?: string;
+    localId?: string;
+    email?: string;
+  };
+}
+
+interface ProfileResult {
+  profile: any;
 }
 
 export const authService = {
   async signUp(email: string, password: string, fullname: string, phone: string, cccd: string) {
-    const response = await apiClient.post<any>('/account/signup', {
+    // Truyền interface SignUpResult vào generic <...>
+    const response = await apiClient.post<SignUpResult>('/account/signup', {
       email,
       password,
       fullname,
@@ -19,29 +34,42 @@ export const authService = {
       cccd,
     });
 
-    // Lấy token Firebase
-    const token = response.token || response.auth?.idToken;
+    // SỬA: Lấy dữ liệu từ thuộc tính .data
+    const data = response.data;
+
+    // Logic fallback: token có thể nằm ở data.token hoặc data.auth.idToken tùy backend
+    const token = data?.token || data?.auth?.idToken;
+
     if (token) {
       apiClient.setToken(token);
     }
 
-    return response;
+    return data;
   },
 
   async signIn(email: string, password: string) {
-    const response = await apiClient.post<any>('/account/signin', { email, password });
+    // Truyền interface SignInResult
+    const response = await apiClient.post<SignInResult>('/account/signin', { email, password });
 
-    const token = response.auth?.idToken;
+    // SỬA: Lấy dữ liệu từ thuộc tính .data
+    const data = response.data;
+    const token = data?.auth?.idToken;
+
     if (token) {
       apiClient.setToken(token);
     }
 
-    return response.auth;
+    return data?.auth;
   },
 
   async signOut() {
-    await apiClient.post('/account/signout');
-    apiClient.setToken(null);
+    try {
+      await apiClient.post('/account/signout');
+    } catch (error) {
+      console.warn("Logout API failed, but clearing local token anyway.", error);
+    } finally {
+      apiClient.setToken(null);
+    }
   },
 
   async getCurrentUser() {
@@ -49,8 +77,11 @@ export const authService = {
     if (!token) return null;
 
     try {
-      const response = await apiClient.get<{ profile: any }>('/account/profile');
-      return response.profile || null;
+      // Truyền interface ProfileResult
+      const response = await apiClient.get<ProfileResult>('/account/profile');
+
+      // SỬA: Truy cập vào response.data.profile
+      return response.data?.profile || null;
     } catch (error) {
       apiClient.setToken(null);
       return null;

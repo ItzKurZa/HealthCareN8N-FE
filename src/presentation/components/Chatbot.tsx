@@ -4,7 +4,7 @@ import type { ChatMessage } from '../../shared/types';
 import { chatbotService } from '../../infrastructure/chatbot/chatbotService';
 
 interface ChatbotProps {
-  user: { cccd: string; [key: string]: any };
+  user: { cccd: string;[key: string]: any };
 }
 
 export const Chatbot = ({ user }: ChatbotProps) => {
@@ -21,34 +21,45 @@ export const Chatbot = ({ user }: ChatbotProps) => {
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-  if (!input.trim() || !user?.cccd) return;
+    if (!input.trim() || !user?.cccd) return;
 
-  const userMessage: ChatMessage = {
-    id: Date.now().toString(),
-    role: 'user',
-    content: input,
-    timestamp: new Date(),
-  };
-
-  setMessages((prev) => [...prev, userMessage]);
-  setInput('');
-  setLoading(true);
-
-  try {
-    const message = await chatbotService.sendMessage(input, user.cccd);
-
-    const assistantMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: message || 'Sorry, I could not get a response.',
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, assistantMessage]);
-  } finally {
-    setLoading(false);
-  }
-};
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      // Gọi service, kết quả trả về là Object { reply: string, user: ... }
+      const response = await chatbotService.sendMessage(input, user.cccd);
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        // SỬA: Lấy thuộc tính .reply từ response object
+        content: response.reply || 'Sorry, I could not get a response.',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      // Xử lý thêm trường hợp lỗi nếu cần hiển thị lên UI
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -77,11 +88,10 @@ export const Chatbot = ({ user }: ChatbotProps) => {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.role === 'user'
+                  className={`max-w-[80%] p-3 rounded-lg ${message.role === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-800'
-                  }`}
+                    }`}
                 >
                   {message.content}
                 </div>
@@ -103,13 +113,16 @@ export const Chatbot = ({ user }: ChatbotProps) => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Ask about booking..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading} // Nên disable input khi đang loading
               />
               <button
                 onClick={handleSend}
-                className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition"
+                disabled={loading}
+                className={`bg-blue-600 text-white p-2 rounded-lg transition ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+                  }`}
               >
                 <Send className="w-5 h-5" />
               </button>

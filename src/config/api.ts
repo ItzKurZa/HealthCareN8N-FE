@@ -8,9 +8,16 @@ export interface ApiResponse<T = any> {
 
 class ApiClient {
   private baseUrl: string;
+  // Biến lưu hàm callback xử lý khi lỗi 401 xảy ra
+  private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  // Cấu hình hành động khi gặp lỗi 401 (ví dụ: logout)
+  setupInterceptors(onUnauthorized: () => void) {
+    this.onUnauthorized = onUnauthorized;
   }
 
   setToken(token: string | null) {
@@ -21,17 +28,25 @@ class ApiClient {
     }
   }
 
-  private getToken(): string | null {
+  getToken(): string | null {
     return localStorage.getItem('auth_token');
+  }
+
+  // Hàm phụ trợ để xử lý lỗi 401 tập trung
+  private handle401() {
+    this.setToken(null); // Xóa token
+    if (this.onUnauthorized) {
+      this.onUnauthorized(); // Gọi hàm điều hướng (nếu có)
+    }
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     const token = this.getToken();
@@ -45,6 +60,16 @@ class ApiClient {
         headers,
       });
 
+      // KIỂM TRA LỖI 401 TẠI ĐÂY
+      if (response.status === 401) {
+        this.handle401();
+        throw new Error('Unauthorized');
+      }
+
+      if (response.status === 204) {
+          return { data: null as any };
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -57,6 +82,7 @@ class ApiClient {
     }
   }
 
+  // Các phương thức HTTP cơ bản
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: 'GET' });
   }
@@ -89,7 +115,7 @@ class ApiClient {
       });
     }
 
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
@@ -101,6 +127,12 @@ class ApiClient {
         headers,
         body: formData,
       });
+
+      // KIỂM TRA LỖI 401 KHI UPLOAD
+      if (response.status === 401) {
+        this.handle401();
+        throw new Error('Unauthorized');
+      }
 
       const data = await response.json();
 
