@@ -27,7 +27,11 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
       } else {
         await authService.signIn(email, password);
       }
+      
       onClose();
+
+      window.location.reload(); 
+
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
     } finally {

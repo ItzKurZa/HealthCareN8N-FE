@@ -8,14 +8,12 @@ export interface ApiResponse<T = any> {
 
 class ApiClient {
   private baseUrl: string;
-  // Biến lưu hàm callback xử lý khi lỗi 401 xảy ra
   private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
-  // Cấu hình hành động khi gặp lỗi 401 (ví dụ: logout)
   setupInterceptors(onUnauthorized: () => void) {
     this.onUnauthorized = onUnauthorized;
   }
@@ -128,7 +126,6 @@ class ApiClient {
         body: formData,
       });
 
-      // KIỂM TRA LỖI 401 KHI UPLOAD
       if (response.status === 401) {
         this.handle401();
         throw new Error('Unauthorized');
