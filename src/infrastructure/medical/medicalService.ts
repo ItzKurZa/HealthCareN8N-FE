@@ -36,6 +36,6 @@ export const medicalService = {
   },
 
   async deleteFile(fileId: string): Promise<void> {
-    await apiClient.delete(`/medical-files/${fileId}`);
+    await apiClient.delete(`/medical/${fileId}`);
   },
 };
