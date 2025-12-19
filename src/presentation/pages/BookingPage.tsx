@@ -37,8 +37,6 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   useEffect(() => {
     if (formData.department) {
-      // SỬA: Giả định Department là object có id. Nếu dept là string, logic này cần sửa lại.
-      // Ở đây ta giả định Department có field 'id' hoặc 'name'
       const filtered = doctors.filter(
         (doc) => doc.department_id === formData.department
       );
@@ -70,7 +68,6 @@ export const BookingPage = ({ user }: BookingPageProps) => {
     try {
       const selectedDoctor = doctors.find((d) => d.name === formData.doctorId);
 
-      // SỬA ĐỔI TẠI ĐÂY
       await bookingService.createBooking({
         user_id: user.cccd,
         department: formData.department,

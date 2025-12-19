@@ -7,7 +7,7 @@ interface UploadPageProps {
   user: any;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export const UploadPage = ({ user }: UploadPageProps) => {
   const [file, setFile] = useState<File | null>(null);
@@ -21,7 +21,7 @@ export const UploadPage = ({ user }: UploadPageProps) => {
       const selectedFile = e.target.files[0];
 
       if (selectedFile.size > MAX_FILE_SIZE) {
-        setError('File quá lớn. Tối đa 50MB');
+        setError('File quá lớn. Tối đa 100MB');
         setFile(null);
         return;
       }
@@ -82,7 +82,7 @@ export const UploadPage = ({ user }: UploadPageProps) => {
 
           <p className="text-gray-600 mb-8">
             Upload your medical records, lab results, prescriptions, or any other health-related
-            documents. Supported formats: PDF, JPG, PNG (Max 50MB)
+            documents. Supported formats: PDF, JPG, PNG (Max 100MB)
           </p>
 
           {success && (
@@ -121,7 +121,7 @@ export const UploadPage = ({ user }: UploadPageProps) => {
                     Click to browse files
                   </span>
                   <span className="text-sm text-gray-500 mt-2">
-                    PDF up to 50MB
+                    PDF up to 100MB
                   </span>
                 </label>
               </div>

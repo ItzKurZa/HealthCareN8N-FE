@@ -30,11 +30,16 @@ class ApiClient {
     return localStorage.getItem('auth_token');
   }
 
-  // Hàm phụ trợ để xử lý lỗi 401 tập trung
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token');
+  }
+
+  // Hàm phụ trợ để xử lý lỗi 401 tập trung (Logout)
   private handle401() {
-    this.setToken(null); // Xóa token
+    this.setToken(null);
+    localStorage.removeItem('refresh_token'); // Xóa cả refresh token
     if (this.onUnauthorized) {
-      this.onUnauthorized(); // Gọi hàm điều hướng (nếu có)
+      this.onUnauthorized();
     }
   }
 
@@ -53,15 +58,55 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      // Dùng let để có thể gán lại response sau khi retry
+      let response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
       });
 
-      // KIỂM TRA LỖI 401 TẠI ĐÂY
       if (response.status === 401) {
-        this.handle401();
-        throw new Error('Unauthorized');
+        const refreshToken = this.getRefreshToken();
+        
+        if (refreshToken) {
+          try {
+            console.log("Token expired, attempting silent refresh...");
+            
+            const refreshResponse = await fetch(`${this.baseUrl}/account/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken })
+            });
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              const newIdToken = refreshData.idToken || refreshData.id_token;
+              const newRefreshToken = refreshData.refreshToken || refreshData.refresh_token;
+
+              if (newIdToken) {
+                this.setToken(newIdToken);
+                if (newRefreshToken) {
+                  localStorage.setItem('refresh_token', newRefreshToken);
+                }
+
+                headers['Authorization'] = `Bearer ${newIdToken}`;
+
+                response = await fetch(`${this.baseUrl}${endpoint}`, {
+                  ...options,
+                  headers,
+                });
+              }
+            } else {
+              throw new Error('Refresh failed');
+            }
+          } catch (refreshError) {
+            console.error("Session refresh failed:", refreshError);
+            this.handle401();
+            throw new Error('Session expired');
+          }
+        } else {
+          this.handle401();
+          throw new Error('Unauthorized');
+        }
       }
 
       if (response.status === 204) {
@@ -120,15 +165,51 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      let response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers,
         body: formData,
       });
 
+      // [LOGIC MỚI] Áp dụng logic refresh token cho cả upload file
       if (response.status === 401) {
-        this.handle401();
-        throw new Error('Unauthorized');
+         const refreshToken = this.getRefreshToken();
+         if (refreshToken) {
+            try {
+                const refreshResponse = await fetch(`${this.baseUrl}/account/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken })
+                });
+
+                if (refreshResponse.ok) {
+                    const refreshData = await refreshResponse.json();
+                    const newIdToken = refreshData.idToken;
+                    
+                    if (newIdToken) {
+                        this.setToken(newIdToken);
+                        if (refreshData.refreshToken) localStorage.setItem('refresh_token', refreshData.refreshToken);
+                        
+                        // Retry upload
+                        headers['Authorization'] = `Bearer ${newIdToken}`;
+                        response = await fetch(`${this.baseUrl}${endpoint}`, {
+                            method: 'POST',
+                            headers,
+                            body: formData,
+                        });
+                    }
+                } else {
+                    this.handle401();
+                    throw new Error('Unauthorized');
+                }
+            } catch (e) {
+                this.handle401();
+                throw new Error('Session expired');
+            }
+         } else {
+             this.handle401();
+             throw new Error('Unauthorized');
+         }
       }
 
       const data = await response.json();
