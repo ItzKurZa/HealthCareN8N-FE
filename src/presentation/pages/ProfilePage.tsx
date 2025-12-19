@@ -11,7 +11,7 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage = ({ user }: ProfilePageProps) => {
-  const [activeTab, setActiveTab] = useState<'files' | 'bookings'>('files');
+  const [activeTab, setActiveTab] = useState<'files' | 'bookings'>('bookings');
   const [medicalFiles, setMedicalFiles] = useState<MedicalFile[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,18 +138,6 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
           <div className="border-b">
             <div className="flex">
               <button
-                onClick={() => setActiveTab('files')}
-                className={`flex-1 px-6 py-4 font-medium transition ${activeTab === 'files'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-600 hover:text-blue-600'
-                  }`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Medical Files ({medicalFiles.length})</span>
-                </div>
-              </button>
-              <button
                 onClick={() => setActiveTab('bookings')}
                 className={`flex-1 px-6 py-4 font-medium transition ${activeTab === 'bookings'
                     ? 'text-blue-600 border-b-2 border-blue-600'
@@ -159,6 +147,18 @@ export const ProfilePage = ({ user }: ProfilePageProps) => {
                 <div className="flex items-center justify-center space-x-2">
                   <Calendar className="w-5 h-5" />
                   <span>Appointments ({bookings.length})</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('files')}
+                className={`flex-1 px-6 py-4 font-medium transition ${activeTab === 'files'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
+                    : 'text-gray-600 hover:text-blue-600'
+                  }`}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Medical Files ({medicalFiles.length})</span>
                 </div>
               </button>
             </div>
