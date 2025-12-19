@@ -9,7 +9,7 @@ export const medicalService = {
     phone?: string;
     notes?: string;
   }): Promise<MedicalFile> {
-    const response = await apiClient.uploadFile<{ file: MedicalFile }>(
+    const response = await apiClient.uploadFile<MedicalFile>(
       '/medical/upload',
       file,
       {
@@ -21,20 +21,17 @@ export const medicalService = {
       }
     );
 
-    // SỬA: Kiểm tra và trả về dữ liệu
-    if (!response.data?.file) {
+    if (!response.data) {
       throw new Error('Upload failed: No file data returned');
     }
 
-    // Trả về đối tượng file để thỏa mãn kiểu Promise<MedicalFile>
-    return response.data.file;
+    return response.data;
   },
 
   async getUserFiles(userId: string): Promise<MedicalFile[]> {
     const response = await apiClient.get<{ files: MedicalFile[] }>(
       `/medical-files/user/${userId}`
     );
-    // Lưu ý: getUserFiles đã viết đúng logic lấy data
     return response.data?.files || [];
   },
 
