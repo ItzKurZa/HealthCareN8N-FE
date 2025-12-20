@@ -15,9 +15,19 @@ export const bookingService = {
     }
   },
 
-  async getUserBookings(userId: string): Promise<Booking[]> {
-    const response = await apiClient.get<{ bookings: Booking[] }>(`/booking/user/${userId}`);
-    return response.bookings || [];
+  async getUserBookings(userId: string, page?: number, limit?: number): Promise<{ bookings: Booking[]; pagination?: any }> {
+    const queryParams = new URLSearchParams();
+    if (page) queryParams.append('page', page.toString());
+    if (limit) queryParams.append('limit', limit.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/booking/user/${userId}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get<{ bookings: Booking[]; pagination?: any }>(endpoint);
+    return {
+      bookings: response.bookings || [],
+      pagination: response.pagination,
+    };
   },
 
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<Booking> {

@@ -28,6 +28,7 @@ export interface Booking {
   reason: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
+  medical_record?: string; // Hồ sơ bệnh án (chỉ Doctor/Admin mới được ghi)
   created_at: string;
 }
 

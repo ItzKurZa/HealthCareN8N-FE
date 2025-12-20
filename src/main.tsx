@@ -7,7 +7,7 @@ import { ToastProvider } from './presentation/contexts/ToastContext';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ToastProvider>
-      <App />
+    <App />
     </ToastProvider>
   </StrictMode>
 );

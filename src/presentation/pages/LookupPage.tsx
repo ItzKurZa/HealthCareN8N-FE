@@ -2,10 +2,17 @@ import { useState, useEffect } from 'react';
 import { Search, Calendar, Clock, User, Phone, Mail, Building2, Stethoscope, FileText, CheckCircle, XCircle, AlertCircle, X, Edit2, Trash2 } from 'lucide-react';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../hooks/useAuth';
 import type { Booking, Department, Doctor } from '../../shared/types';
 
 export const LookupPage = () => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  
+  // Get user role
+  const getUserRole = () => {
+    return user?.role || 'patient';
+  };
   const [searchType, setSearchType] = useState<'id' | 'phone'>('id');
   const [searchValue, setSearchValue] = useState('');
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -141,6 +148,13 @@ export const LookupPage = () => {
 
   const handleCancelBooking = async () => {
     if (!booking) return;
+    
+    // Kiểm tra role: Doctor không được hủy lịch (theo RBAC model)
+    const role = getUserRole();
+    if (role === 'doctor') {
+      showToast('Bác sĩ không thể hủy lịch hẹn. Vui lòng liên hệ quản trị viên nếu cần hỗ trợ.', 'warning');
+      return;
+    }
     
     if (!window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
       return;
@@ -480,45 +494,60 @@ export const LookupPage = () => {
                   )}
 
                   {/* Actions */}
-                  {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <a
-                          href={`/check-in/${booking.submission_id || booking.id}`}
-                          className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-                        >
-                          <FileText className="w-5 h-5" />
-                          <span>Xem trang Check-in</span>
-                        </a>
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <a
+                        href={`/booking/${booking.submission_id || booking.id}`}
+                        className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                      >
+                        <FileText className="w-5 h-5" />
+                        <span>Xem chi tiết</span>
+                      </a>
+                      {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                        <>
+                          <a
+                            href={`/check-in/${booking.submission_id || booking.id}`}
+                            className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                          >
+                            <FileText className="w-5 h-5" />
+                            <span>Xem trang Check-in</span>
+                          </a>
+                        </>
+                      )}
                         
-                        <button
-                          onClick={handleOpenEditModal}
-                          className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                          <span>Thay đổi lịch</span>
-                        </button>
-                        
-                        <button
-                          onClick={handleCancelBooking}
-                          disabled={cancelling}
-                          className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {cancelling ? (
-                            <>
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                              <span>Đang hủy...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Trash2 className="w-5 h-5" />
-                              <span>Hủy lịch</span>
-                            </>
-                          )}
-                        </button>
+                        {getUserRole() !== 'doctor' && booking.status !== 'cancelled' && booking.status !== 'canceled' && booking.status !== 'completed' && (
+                          <>
+                            <button
+                              onClick={handleOpenEditModal}
+                              className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                              <span>Thay đổi lịch</span>
+                            </button>
+                            
+                            {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                              <button
+                                onClick={handleCancelBooking}
+                                disabled={cancelling}
+                                className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {cancelling ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    <span>Đang hủy...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="w-5 h-5" />
+                                    <span>Hủy lịch</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
-                  )}
                 </div>
               </div>
             ) : (

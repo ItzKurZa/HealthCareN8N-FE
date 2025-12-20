@@ -1,4 +1,4 @@
-import { Home, Calendar, Upload, User, LogOut, Activity, BarChart3, Users, Clock, Search } from 'lucide-react';
+import { Home, Calendar, User, Activity, BarChart3, Users, Clock, Search } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 import { useToast } from '../contexts/ToastContext';
 
@@ -20,6 +20,8 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
       if (onSignOutSuccess) {
         await onSignOutSuccess();
       }
+      // Redirect về trang home sau khi đăng xuất
+      onNavigate('home');
     } catch (error: any) {
       showToast(error.message || 'Đăng xuất thất bại', 'error');
     }
@@ -35,6 +37,9 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
           </div>
 
           <div className="flex items-center space-x-6">
+            {/* Admin chỉ thấy các trang quản lý */}
+            {userRole === 'admin' ? (
+              <>
             <button
               onClick={() => onNavigate('home')}
               className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
@@ -44,49 +49,6 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
               <Home className="w-5 h-5" />
               <span className="font-medium">Home</span>
             </button>
-
-            <button
-              onClick={() => onNavigate('lookup')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <Search className="w-5 h-5" />
-              <span className="font-medium">Tra Cứu</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('booking')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <Calendar className="w-5 h-5" />
-              <span className="font-medium">Booking</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('upload')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                currentPage === 'upload' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <Upload className="w-5 h-5" />
-              <span className="font-medium">Upload</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('profile')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <User className="w-5 h-5" />
-              <span className="font-medium">Profile</span>
-            </button>
-
-            {userRole === 'admin' && (
-              <>
                 <button
                   onClick={() => onNavigate('dashboard')}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
@@ -105,10 +67,55 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
                   <Users className="w-5 h-5" />
                   <span className="font-medium">Bệnh Nhân</span>
                 </button>
+                {user && (
+                  <button
+                    onClick={() => onNavigate('profile')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">Profile</span>
+                  </button>
+                )}
               </>
-            )}
+            ) : (
+              <>
+                {/* Patient và Doctor thấy menu bình thường */}
+                <button
+                  onClick={() => onNavigate('home')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">Home</span>
+                </button>
 
-            {(userRole === 'doctor' || userRole === 'admin') && (
+                <button
+                  onClick={() => onNavigate('lookup')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Search className="w-5 h-5" />
+                  <span className="font-medium">Tra Cứu</span>
+                </button>
+
+                {/* Doctor không được đặt lịch (theo RBAC model) */}
+                {userRole !== 'doctor' && (
+                  <button
+                    onClick={() => onNavigate('booking')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                      currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    <Calendar className="w-5 h-5" />
+                    <span className="font-medium">Booking</span>
+                  </button>
+                )}
+
+                {userRole === 'doctor' && (
               <button
                 onClick={() => onNavigate('schedule')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
@@ -122,12 +129,16 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
 
             {user && (
               <button
-                onClick={handleSignOut}
-                className="flex items-center space-x-1 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition"
+                    onClick={() => onNavigate('profile')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                    }`}
               >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Sign Out</span>
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">Profile</span>
               </button>
+                )}
+              </>
             )}
           </div>
         </div>

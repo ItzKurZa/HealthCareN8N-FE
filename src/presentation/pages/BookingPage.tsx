@@ -91,14 +91,10 @@ export const BookingPage = ({ user }: BookingPageProps) => {
       const bookingCode = bookingResult.submission_id || bookingResult.id;
       showToast(`Đặt lịch thành công! Mã đặt lịch của bạn: ${bookingCode}. Chúng tôi sẽ liên hệ với bạn sớm để xác nhận.`, 'success');
       
-      setFormData({
-        department: '',
-        doctorId: '',
-        appointmentDate: '',
-        appointmentTime: '',
-        reason: '',
-        notes: '',
-      });
+      // Redirect đến trang chi tiết lịch sau 1.5 giây
+      setTimeout(() => {
+        window.location.href = `/booking/${bookingCode}`;
+      }, 1500);
     } catch (err: any) {
       showToast(err.message || 'Đặt lịch thất bại. Vui lòng thử lại.', 'error');
     } finally {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Calendar, CheckCircle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { adminService, type Statistics } from '../../infrastructure/admin/adminService';
+import { authService } from '../../infrastructure/auth/authService';
 import { useToast } from '../contexts/ToastContext';
 
 interface DashboardPageProps {
@@ -12,10 +13,23 @@ export const DashboardPage = ({ user }: DashboardPageProps) => {
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     loadStatistics();
+    loadUserProfile();
   }, []);
+  
+  const loadUserProfile = async () => {
+    try {
+      const profile = await authService.getCurrentUser();
+      if (profile) {
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const loadStatistics = async () => {
     setLoading(true);
@@ -112,9 +126,19 @@ export const DashboardPage = ({ user }: DashboardPageProps) => {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-3">
             <BarChart3 className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">Bảng Thống Kê</h1>
+            </div>
+            {userProfile && (
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Xin chào,</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {userProfile.fullname || userProfile.email?.split('@')[0] || 'Admin'}
+                </p>
+              </div>
+            )}
           </div>
           <p className="text-gray-600">Tổng quan về hoạt động của hệ thống</p>
         </div>
