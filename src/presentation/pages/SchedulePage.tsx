@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Settings, FileText, X } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Settings, FileText, X, List, Grid, CalendarDays, Play, Pause, XCircle as XCircleIcon, Users, FileText as FileTextIcon } from 'lucide-react';
 import { doctorService, type PatientBooking } from '../../infrastructure/doctor/doctorService';
 import { useToast } from '../contexts/ToastContext';
 
 interface SchedulePageProps {
   user: any;
 }
+
+type ViewMode = 'day' | 'week' | 'list';
 
 export const SchedulePage = ({ user }: SchedulePageProps) => {
   const { showToast } = useToast();
@@ -14,12 +16,18 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   // Medical record state
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<PatientBooking | null>(null);
   const [medicalRecord, setMedicalRecord] = useState('');
   const [savingRecord, setSavingRecord] = useState(false);
+  
+  // Drawer state for booking details
+  const [showBookingDrawer, setShowBookingDrawer] = useState(false);
+  const [drawerBooking, setDrawerBooking] = useState<PatientBooking | null>(null);
 
   // Lấy tên bác sĩ từ user (giả sử có trong user object)
   const doctorName = user?.fullname || user?.user_metadata?.full_name || user?.name || '';
@@ -107,17 +115,50 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+    // Màu theo yêu cầu: PENDING=Xám, CONFIRMED=Xanh, COMPLETED=Xanh đậm, CANCELLED=Đỏ, NO_SHOW=Cam
+    switch (status?.toUpperCase()) {
+      case 'PENDING':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'CONFIRMED':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'COMPLETED':
+        return 'bg-green-700 text-white border-green-800';
+      case 'CANCELLED':
+      case 'CANCELED':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'NO_SHOW':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+  
+  const handleBookingClick = (booking: PatientBooking) => {
+    setDrawerBooking(booking);
+    setShowBookingDrawer(true);
+  };
+  
+  const handleStartExamination = async () => {
+    if (!drawerBooking) return;
+    // Redirect đến màn hình khám bệnh
+    const bookingId = drawerBooking.submission_id || drawerBooking.id;
+    window.location.href = `/clinical/${bookingId}`;
+  };
+  
+  const handlePostpone = async () => {
+    if (!drawerBooking) return;
+    showToast('Chức năng đang được phát triển', 'info');
+  };
+  
+  const handleNoShow = async () => {
+    if (!drawerBooking) return;
+    try {
+      await doctorService.updateBookingStatus(drawerBooking.id, 'no_show' as any);
+      showToast('Đã đánh dấu bệnh nhân không đến', 'success');
+      setShowBookingDrawer(false);
+      loadBookings();
+    } catch (err: any) {
+      showToast(err.message || 'Cập nhật thất bại', 'error');
     }
   };
 
@@ -195,9 +236,45 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
             <div>
               <div className="flex items-center space-x-3 mb-2">
                 <Calendar className="w-8 h-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Quản Lý Lịch Hẹn</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Lịch Khám</h1>
               </div>
               <p className="text-gray-600">Quản lý lịch hẹn của bác sĩ {doctorName}</p>
+            </div>
+            {/* View Mode Toggle */}
+            <div className="flex items-center space-x-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+              <button
+                onClick={() => setViewMode('day')}
+                className={`px-4 py-2 rounded-md transition ${
+                  viewMode === 'day' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                title="Day View"
+              >
+                <CalendarDays className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('week')}
+                className={`px-4 py-2 rounded-md transition ${
+                  viewMode === 'week' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                title="Week View"
+              >
+                <Grid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-4 py-2 rounded-md transition ${
+                  viewMode === 'list' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+                title="List View"
+              >
+                <List className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -265,7 +342,15 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                         return (
                           <div
                             key={booking.id}
-                            className="border border-gray-200 rounded-lg p-6 hover:border-blue-300 transition"
+                            className="border-2 rounded-lg p-6 hover:shadow-md transition cursor-pointer"
+                            style={{
+                              borderColor: booking.status === 'pending' ? '#9ca3af' :
+                                          booking.status === 'confirmed' ? '#3b82f6' :
+                                          booking.status === 'completed' ? '#15803d' :
+                                          booking.status === 'cancelled' || booking.status === 'canceled' ? '#dc2626' :
+                                          booking.status === 'no_show' ? '#ea580c' : '#9ca3af'
+                            }}
+                            onClick={() => handleBookingClick(booking)}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -441,6 +526,131 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Detail Drawer (bên phải) */}
+      {showBookingDrawer && drawerBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
+          <div className="bg-white w-full max-w-md h-full overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">Chi tiết lịch khám</h2>
+              <button
+                onClick={() => setShowBookingDrawer(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Thông tin bệnh nhân */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Thông tin bệnh nhân</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <User className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Họ và tên</p>
+                      <p className="font-semibold text-gray-900">{drawerBooking.full_name || drawerBooking.fullname}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Phone className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Số điện thoại</p>
+                      <p className="font-semibold text-gray-900">{drawerBooking.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-semibold text-gray-900">{drawerBooking.email}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Lý do khám */}
+              {drawerBooking.reason && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Lý do khám</h3>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{drawerBooking.reason}</p>
+                </div>
+              )}
+
+              {/* Thông tin lịch hẹn */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Thông tin lịch hẹn</h3>
+                <div className="space-y-2 bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Ngày:</span> {formatDate(drawerBooking.appointment_date)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Giờ:</span> {drawerBooking.appointment_time}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Khoa:</span> {drawerBooking.department}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Trạng thái:</span>{' '}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(drawerBooking.status)}`}>
+                      {drawerBooking.status === 'pending' ? 'Chờ khám' :
+                       drawerBooking.status === 'confirmed' ? 'Đã xác nhận' :
+                       drawerBooking.status === 'completed' ? 'Đã hoàn thành' :
+                       drawerBooking.status === 'cancelled' || drawerBooking.status === 'canceled' ? 'Đã hủy' :
+                       drawerBooking.status === 'no_show' ? 'Không đến' : drawerBooking.status}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Nút thao tác nhanh */}
+              {(drawerBooking.status === 'pending' || drawerBooking.status === 'confirmed') && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Thao tác nhanh</h3>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleStartExamination}
+                      className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center space-x-2"
+                    >
+                      <Play className="w-5 h-5" />
+                      <span>Bắt đầu khám</span>
+                    </button>
+                    <button
+                      onClick={handlePostpone}
+                      className="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-medium flex items-center justify-center space-x-2"
+                    >
+                      <Pause className="w-5 h-5" />
+                      <span>Hoãn</span>
+                    </button>
+                    <button
+                      onClick={handleNoShow}
+                      className="w-full px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium flex items-center justify-center space-x-2"
+                    >
+                      <XCircleIcon className="w-5 h-5" />
+                      <span>Không đến</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Nút ghi hồ sơ bệnh án */}
+              {(drawerBooking.status === 'confirmed' || drawerBooking.status === 'completed') && (
+                <button
+                  onClick={() => {
+                    setShowBookingDrawer(false);
+                    handleOpenMedicalRecord(drawerBooking);
+                  }}
+                  className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium flex items-center justify-center space-x-2"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>{drawerBooking.medical_record ? 'Sửa hồ sơ bệnh án' : 'Ghi hồ sơ bệnh án'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

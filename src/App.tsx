@@ -13,6 +13,11 @@ import { SchedulePage } from './presentation/pages/SchedulePage';
 import { CheckInPage } from './presentation/pages/CheckInPage';
 import { LookupPage } from './presentation/pages/LookupPage';
 import { BookingDetailPage } from './presentation/pages/BookingDetailPage';
+import { DoctorDashboardPage } from './presentation/pages/DoctorDashboardPage';
+import { DoctorClinicalPage } from './presentation/pages/DoctorClinicalPage';
+import { DoctorPatientsPage } from './presentation/pages/DoctorPatientsPage';
+import { DoctorRecordsPage } from './presentation/pages/DoctorRecordsPage';
+import { DoctorSchedulePage } from './presentation/pages/DoctorSchedulePage';
 import { ToastContainer } from './presentation/components/ToastContainer';
 import { useToast } from './presentation/contexts/ToastContext';
 
@@ -23,7 +28,7 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isCheckInPage, setIsCheckInPage] = useState(false);
 
-  // Check if current path is check-in page, booking detail page, or booking page
+  // Check if current path is check-in page, booking detail page, booking page, or clinical page
   useEffect(() => {
     const path = window.location.pathname;
     if (path.includes('/check-in/')) {
@@ -35,11 +40,23 @@ function App() {
       if (bookingId) {
         setCurrentPage('booking-detail');
       }
+    } else if (path.includes('/clinical/')) {
+      // Handle clinical page route
+      setCurrentPage('doctor-clinical');
     } else if (path === '/booking' || path === '/booking/') {
       // Handle booking page route (without ID) - use handleNavigate to check auth and permissions
       handleNavigate('booking');
     } else {
       setIsCheckInPage(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Auto redirect doctor to dashboard on login
+  useEffect(() => {
+    const role = getUserRole();
+    if (role === 'doctor' && user && currentPage === 'home') {
+      setCurrentPage('doctor-dashboard');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -74,7 +91,7 @@ function App() {
     const role = getUserRole();
     const protectedPages = ['booking', 'profile', 'lookup']; // Yêu cầu đăng nhập cho tra cứu và đặt lịch
     const adminPages = ['dashboard', 'patients'];
-    const doctorPages = ['schedule'];
+    const doctorPages = ['schedule', 'doctor-dashboard', 'doctor-patients', 'doctor-records', 'doctor-schedule', 'doctor-clinical'];
     
     // Admin chỉ được truy cập các trang quản lý
     if (role === 'admin') {
@@ -124,8 +141,8 @@ function App() {
     );
   }
 
-  // If check-in page or booking detail page, don't show navbar
-  if (isCheckInPage || currentPage === 'booking-detail') {
+  // If check-in page, booking detail page, or clinical page, don't show navbar
+  if (isCheckInPage || currentPage === 'booking-detail' || currentPage === 'doctor-clinical') {
     if (isCheckInPage) {
       return (
         <div className="min-h-screen bg-gray-50">
@@ -138,6 +155,14 @@ function App() {
       return (
         <div className="min-h-screen bg-gray-50">
           <BookingDetailPage />
+          <GlobalLoading />
+        </div>
+      );
+    }
+    if (currentPage === 'doctor-clinical') {
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <DoctorClinicalPage user={user} />
           <GlobalLoading />
         </div>
       );
@@ -160,11 +185,17 @@ function App() {
       {currentPage === 'lookup' && user && getUserRole() !== 'admin' && <LookupPage />}
       {currentPage === 'booking' && user && getUserRole() !== 'admin' && <BookingPage user={user} />}
       {currentPage === 'profile' && user && getUserRole() !== 'admin' && <ProfilePage user={user} onSignOutSuccess={refreshUser} />}
-      {/* Chỉ admin mới thấy */}
+      {/* Admin Dashboard */}
       {currentPage === 'dashboard' && user && getUserRole() === 'admin' && <DashboardPage user={user} />}
       {currentPage === 'patients' && user && getUserRole() === 'admin' && <PatientsPage user={user} />}
+      {/* Doctor Dashboard */}
+      {currentPage === 'doctor-dashboard' && user && getUserRole() === 'doctor' && <DoctorDashboardPage user={user} />}
       {/* Doctor và Patient thấy */}
       {currentPage === 'schedule' && user && getUserRole() !== 'admin' && <SchedulePage user={user} />}
+      {/* Doctor only pages */}
+      {currentPage === 'doctor-patients' && user && getUserRole() === 'doctor' && <DoctorPatientsPage user={user} />}
+      {currentPage === 'doctor-records' && user && getUserRole() === 'doctor' && <DoctorRecordsPage user={user} />}
+      {currentPage === 'doctor-schedule' && user && getUserRole() === 'doctor' && <DoctorSchedulePage user={user} />}
 
       {showAuthModal && (
         <AuthModal 

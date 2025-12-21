@@ -1,4 +1,4 @@
-import { Home, Calendar, User, Activity, BarChart3, Users, Clock, Search } from 'lucide-react';
+import { Home, Calendar, User, Activity, BarChart3, Users, Clock, Search, FileText, Settings as SettingsIcon } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 import { useToast } from '../contexts/ToastContext';
 
@@ -81,62 +81,102 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
               </>
             ) : (
               <>
-                {/* Patient và Doctor thấy menu bình thường */}
-                <button
-                  onClick={() => onNavigate('home')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                    currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                  }`}
-                >
-                  <Home className="w-5 h-5" />
-                  <span className="font-medium">Home</span>
-                </button>
+                {userRole === 'doctor' ? (
+                  <>
+                    {/* Menu tối giản cho Doctor - chỉ giữ các menu chính */}
+                    <button
+                      onClick={() => onNavigate('doctor-dashboard')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'doctor-dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <BarChart3 className="w-5 h-5" />
+                      <span className="font-medium">Dashboard</span>
+                    </button>
+                    <button
+                      onClick={() => onNavigate('schedule')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'schedule' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <Calendar className="w-5 h-5" />
+                      <span className="font-medium">Lịch Khám</span>
+                    </button>
+                    <button
+                      onClick={() => onNavigate('doctor-patients')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'doctor-patients' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <Users className="w-5 h-5" />
+                      <span className="font-medium">Bệnh Nhân</span>
+                    </button>
+                    <button
+                      onClick={() => onNavigate('doctor-records')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'doctor-records' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span className="font-medium">Hồ Sơ</span>
+                    </button>
+                    {user && (
+                      <button
+                        onClick={() => onNavigate('profile')}
+                        className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                          currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                        }`}
+                      >
+                        <User className="w-5 h-5" />
+                        <span className="font-medium">Profile</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Patient menu - giữ nguyên */}
+                    <button
+                      onClick={() => onNavigate('home')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <Home className="w-5 h-5" />
+                      <span className="font-medium">Home</span>
+                    </button>
 
-                <button
-                  onClick={() => onNavigate('lookup')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                    currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                  }`}
-                >
-                  <Search className="w-5 h-5" />
-                  <span className="font-medium">Tra Cứu</span>
-                </button>
+                    <button
+                      onClick={() => onNavigate('lookup')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <Search className="w-5 h-5" />
+                      <span className="font-medium">Tra Cứu</span>
+                    </button>
 
-                {/* Doctor không được đặt lịch (theo RBAC model) */}
-                {userRole !== 'doctor' && (
-                  <button
-                    onClick={() => onNavigate('booking')}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                      currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    <Calendar className="w-5 h-5" />
-                    <span className="font-medium">Booking</span>
-                  </button>
-                )}
+                    <button
+                      onClick={() => onNavigate('booking')}
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                        currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                      }`}
+                    >
+                      <Calendar className="w-5 h-5" />
+                      <span className="font-medium">Booking</span>
+                    </button>
 
-                {userRole === 'doctor' && (
-              <button
-                onClick={() => onNavigate('schedule')}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                  currentPage === 'schedule' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                }`}
-              >
-                <Clock className="w-5 h-5" />
-                <span className="font-medium">Lịch Hẹn</span>
-              </button>
-            )}
-
-            {user && (
-              <button
-                    onClick={() => onNavigate('profile')}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-              >
-                    <User className="w-5 h-5" />
-                    <span className="font-medium">Profile</span>
-              </button>
+                    {user && (
+                      <button
+                        onClick={() => onNavigate('profile')}
+                        className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                          currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                        }`}
+                      >
+                        <User className="w-5 h-5" />
+                        <span className="font-medium">Profile</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </>
             )}

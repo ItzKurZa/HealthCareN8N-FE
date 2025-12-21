@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, FileText, Calendar, Trash2, Download, UserCircle, Mail, Phone, CreditCard, Clock, Upload, LogOut, Stethoscope, Users, Activity, Edit2, X } from 'lucide-react';
+import { User, FileText, Calendar, Trash2, Download, UserCircle, Mail, Phone, CreditCard, Clock, Upload, LogOut, Stethoscope, Users, Activity, Edit2, X, Award, GraduationCap, Briefcase, BarChart3, CheckCircle, AlertCircle } from 'lucide-react';
 import { medicalService } from '../../infrastructure/medical/medicalService';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { authService } from '../../infrastructure/auth/authService';
@@ -22,6 +22,27 @@ interface UserProfile {
   role?: string;
   doctor_name?: string;
   department?: string;
+  departmentId?: string;
+  department_info?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  doctor_status?: string;
+  doctor_catalog_id?: string;
+  consultation_fee?: number;
+  license_number?: string;
+  qualifications?: string;
+  experience?: number;
+  specialization?: string;
+  statistics?: {
+    totalBookings: number;
+    totalPatients: number;
+    completedBookings: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+  };
   createdAt?: string;
 }
 
@@ -64,6 +85,14 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
   const [selectedBooking, setSelectedBooking] = useState<PatientBooking | null>(null);
   const [medicalRecord, setMedicalRecord] = useState('');
   const [savingRecord, setSavingRecord] = useState(false);
+  const [doctorStats, setDoctorStats] = useState({
+    totalBookings: 0,
+    totalPatients: 0,
+    completedBookings: 0,
+    pendingBookings: 0,
+    confirmedBookings: 0,
+    cancelledBookings: 0,
+  });
 
   useEffect(() => {
     loadData();
@@ -83,6 +112,8 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
       if (role === 'doctor') {
         // Load doctor bookings (patients' appointments)
         await loadDoctorBookings();
+        // Load doctor statistics
+        await loadDoctorStatistics();
       } else {
         // Load patient data
         const userId = user.id || user.cccd || user.user_id || user.uid || profile?.uid;
@@ -125,6 +156,72 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
       showToast('Không thể tải lịch hẹn. Vui lòng thử lại.', 'error');
     } finally {
       setDoctorBookingsLoading(false);
+    }
+  };
+
+  const loadDoctorStatistics = async () => {
+    try {
+      // Nếu profile đã có statistics từ API, sử dụng luôn
+      if (userProfile?.statistics) {
+        setDoctorStats({
+          totalBookings: userProfile.statistics.totalBookings || 0,
+          totalPatients: userProfile.statistics.totalPatients || 0,
+          completedBookings: userProfile.statistics.completedBookings || 0,
+          pendingBookings: userProfile.statistics.pendingBookings || 0,
+          confirmedBookings: userProfile.statistics.confirmedBookings || 0,
+          cancelledBookings: userProfile.statistics.cancelledBookings || 0,
+        });
+        return;
+      }
+
+      // Fallback: tính từ bookings nếu API chưa có statistics
+      const doctorName = userProfile?.doctor_name || userProfile?.fullname || user?.fullname || '';
+      if (!doctorName) return;
+
+      // Load all bookings để tính thống kê
+      const allBookings = await doctorService.getDoctorBookings(doctorName, {});
+      const bookings = allBookings.bookings || [];
+
+      // Tính thống kê
+      const uniquePatients = new Set<string>();
+      let completed = 0;
+      let pending = 0;
+      let confirmed = 0;
+      let cancelled = 0;
+
+      bookings.forEach((booking) => {
+        // Count unique patients
+        if (booking.email) uniquePatients.add(booking.email);
+        else if (booking.phone) uniquePatients.add(booking.phone);
+
+        // Count by status
+        switch (booking.status) {
+          case 'completed':
+            completed++;
+            break;
+          case 'pending':
+            pending++;
+            break;
+          case 'confirmed':
+            confirmed++;
+            break;
+          case 'cancelled':
+          case 'canceled':
+            cancelled++;
+            break;
+        }
+      });
+
+      setDoctorStats({
+        totalBookings: bookings.length,
+        totalPatients: uniquePatients.size,
+        completedBookings: completed,
+        pendingBookings: pending,
+        confirmedBookings: confirmed,
+        cancelledBookings: cancelled,
+      });
+    } catch (error: any) {
+      console.error('Error loading doctor statistics:', error);
     }
   };
   
@@ -452,7 +549,49 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
             ) : (
               <>
                 {activeTab === 'profile' && (
-                  <div className="max-w-2xl">
+                  <div className="max-w-4xl">
+                    {/* Thống kê cho doctor */}
+                    {isDoctor && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-blue-500">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">Tổng lịch hẹn</p>
+                              <p className="text-2xl font-bold text-gray-900">{doctorStats.totalBookings}</p>
+                            </div>
+                            <Calendar className="w-8 h-8 text-blue-500" />
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-green-500">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">Bệnh nhân</p>
+                              <p className="text-2xl font-bold text-gray-900">{doctorStats.totalPatients}</p>
+                            </div>
+                            <Users className="w-8 h-8 text-green-500" />
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-purple-500">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">Đã hoàn thành</p>
+                              <p className="text-2xl font-bold text-gray-900">{doctorStats.completedBookings}</p>
+                            </div>
+                            <CheckCircle className="w-8 h-8 text-purple-500" />
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-xl shadow-lg p-4 border-l-4 border-yellow-500">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">Đang chờ</p>
+                              <p className="text-2xl font-bold text-gray-900">{doctorStats.pendingBookings}</p>
+                            </div>
+                            <Clock className="w-8 h-8 text-yellow-500" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className={`bg-gradient-to-r ${isDoctor ? 'from-green-50 to-emerald-50' : 'from-blue-50 to-indigo-50'} rounded-lg p-6 mb-6`}>
                       <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
                         {isDoctor && <Stethoscope className="w-6 h-6 text-green-600" />}
@@ -475,9 +614,90 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
                           <div className="flex items-start space-x-4">
                             <Activity className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="text-sm text-gray-600 mb-1">Khoa</p>
+                              <p className="text-sm text-gray-600 mb-1">Khoa / Chuyên khoa</p>
                               <p className="text-lg font-semibold text-gray-900">
                                 {userProfile.department}
+                              </p>
+                              {userProfile?.department_info?.description && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {userProfile.department_info.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {isDoctor && userProfile?.doctor_status && (
+                          <div className="flex items-start space-x-4">
+                            <AlertCircle className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Trạng thái</p>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                userProfile.doctor_status === 'active' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {userProfile.doctor_status === 'active' ? 'Đang hoạt động' : 'Không hoạt động'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {isDoctor && (
+                          <div className="flex items-start space-x-4">
+                            <CreditCard className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Phí khám</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {userProfile?.consultation_fee ? `${userProfile.consultation_fee.toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {isDoctor && (
+                          <div className="flex items-start space-x-4">
+                            <FileText className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Số giấy phép hành nghề</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {userProfile?.license_number || 'Chưa cập nhật'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {isDoctor && (
+                          <div className="flex items-start space-x-4">
+                            <GraduationCap className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Bằng cấp / Chứng chỉ</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {userProfile?.qualifications || 'Chưa cập nhật'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {isDoctor && (
+                          <div className="flex items-start space-x-4">
+                            <Briefcase className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Kinh nghiệm</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {userProfile?.experience ? `${userProfile.experience} năm` : 'Chưa cập nhật'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {isDoctor && (
+                          <div className="flex items-start space-x-4">
+                            <Award className="w-6 h-6 text-green-600 mt-1 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600 mb-1">Chuyên môn</p>
+                              <p className="text-lg font-semibold text-gray-900">
+                                {userProfile?.specialization || userProfile?.department || 'Chưa cập nhật'}
                               </p>
                             </div>
                           </div>
@@ -538,6 +758,42 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
                         )}
                       </div>
                     </div>
+
+                    {/* Thông tin bổ sung cho doctor */}
+                    {isDoctor && (
+                      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                          <BarChart3 className="w-5 h-5 text-green-600" />
+                          <span>Thống kê hoạt động</span>
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <div className="p-4 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Tổng lịch hẹn</p>
+                            <p className="text-2xl font-bold text-blue-600">{doctorStats.totalBookings}</p>
+                          </div>
+                          <div className="p-4 bg-green-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Bệnh nhân đã khám</p>
+                            <p className="text-2xl font-bold text-green-600">{doctorStats.totalPatients}</p>
+                          </div>
+                          <div className="p-4 bg-purple-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Đã hoàn thành</p>
+                            <p className="text-2xl font-bold text-purple-600">{doctorStats.completedBookings}</p>
+                          </div>
+                          <div className="p-4 bg-yellow-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Đang chờ</p>
+                            <p className="text-2xl font-bold text-yellow-600">{doctorStats.pendingBookings}</p>
+                          </div>
+                          <div className="p-4 bg-indigo-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Đã xác nhận</p>
+                            <p className="text-2xl font-bold text-indigo-600">{doctorStats.confirmedBookings}</p>
+                          </div>
+                          <div className="p-4 bg-red-50 rounded-lg">
+                            <p className="text-sm text-gray-600 mb-1">Đã hủy</p>
+                            <p className="text-2xl font-bold text-red-600">{doctorStats.cancelledBookings}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
