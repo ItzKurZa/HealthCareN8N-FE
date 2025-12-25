@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '../../config/api'; //
 
 interface Stats {
   totalSurveys: number;
@@ -30,7 +31,8 @@ interface SurveyResponse {
   createdAt: string;
 }
 
-const API_BASE = 'http://localhost:5000';
+// Lấy URL gốc để dùng cho window.open (export file)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 export function CSKHDashboardPage() {
   const [stats, setStats] = useState<Stats>({
@@ -56,40 +58,44 @@ export function CSKHDashboardPage() {
     try {
       setLoading(true);
       
-      // Fetch stats
-      const statsRes = await fetch(`${API_BASE}/api/surveys/stats`);
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        const data = statsData.data;
-        if (data) {
-          setStats({
-            totalSurveys: data.surveys?.total || 0,
-            totalResponses: data.surveys?.completed || 0,
-            responseRate: data.surveys?.total > 0 
-              ? ((data.surveys?.completed || 0) / data.surveys.total * 100) 
-              : 0,
-            averageRating: data.surveys?.averageScore || 0,
-            totalAlerts: data.alerts?.total || 0,
-            pendingAlerts: data.alerts?.pending || 0,
-            totalVoiceCalls: data.voiceCalls?.total || 0,
-            negativeVoiceCalls: data.voiceCalls?.total - (data.voiceCalls?.success || 0),
-          });
-        }
+      // 1. Fetch stats bằng apiClient
+      // Không cần try/catch lẻ tẻ nếu muốn catch chung ở ngoài, nhưng kiểm tra response.data an toàn hơn
+      const statsRes = await apiClient.get<any>('/surveys/stats');
+      if (statsRes.data) {
+        const data = statsRes.data;
+        setStats({
+          totalSurveys: data.surveys?.total || 0,
+          totalResponses: data.surveys?.completed || 0,
+          responseRate: data.surveys?.total > 0 
+            ? ((data.surveys?.completed || 0) / data.surveys.total * 100) 
+            : 0,
+          averageRating: data.surveys?.averageScore || 0,
+          totalAlerts: data.alerts?.total || 0,
+          pendingAlerts: data.alerts?.pending || 0,
+          totalVoiceCalls: data.voiceCalls?.total || 0,
+          negativeVoiceCalls: data.voiceCalls?.total - (data.voiceCalls?.success || 0),
+        });
       }
 
-      // Fetch alerts
-      const alertsRes = await fetch(`${API_BASE}/api/alerts/list`);
-      if (alertsRes.ok) {
-        const alertsData = await alertsRes.json();
-        setAlerts(alertsData.data || []);
+      // 2. Fetch alerts
+      try {
+        // Lưu ý: Backend route là /api/alerts hoặc /api/alerts/list tùy vào file route của bạn
+        // Ở đây giả định backend đã chuẩn hóa route là /alerts/list
+        const alertsRes = await apiClient.get<any>('/alerts/list'); 
+        setAlerts(alertsRes.data || []);
+      } catch (err) {
+        console.warn('Failed to fetch alerts', err);
+        setAlerts([]);
       }
 
-      // Fetch recent responses
-      const responsesRes = await fetch(`${API_BASE}/api/surveys/recent`);
-      if (responsesRes.ok) {
-        const responsesData = await responsesRes.json();
-        setRecentResponses(responsesData.data || []);
+      // 3. Fetch recent responses
+      try {
+        const responsesRes = await apiClient.get<any>('/surveys/recent');
+        setRecentResponses(responsesRes.data || []);
+      } catch (err) {
+        console.warn('Failed to fetch recent responses', err);
       }
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -99,20 +105,20 @@ export function CSKHDashboardPage() {
 
   const handleResolveAlert = async (alertId: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/alerts/${alertId}/resolve`, {
-        method: 'PUT',
-      });
-      if (res.ok) {
-        setAlerts(alerts.map(a => 
-          a.id === alertId ? { ...a, status: 'resolved' } : a
-        ));
-      }
+      // Sử dụng apiClient.put thay vì fetch
+      await apiClient.put(`/alerts/${alertId}/resolve`);
+      
+      // Cập nhật state local ngay lập tức để UI phản hồi nhanh
+      setAlerts(alerts.map(a => 
+        a.id === alertId ? { ...a, status: 'resolved' } : a
+      ));
     } catch (error) {
       console.error('Error resolving alert:', error);
     }
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
     return new Date(dateStr).toLocaleString('vi-VN');
   };
 
@@ -464,7 +470,8 @@ export function CSKHDashboardPage() {
               🔗 Mở N8N Workflow
             </a>
             <button
-              onClick={() => window.open(`${API_BASE}/api/surveys/export`, '_blank')}
+              // Sử dụng API_BASE_URL đã định nghĩa ở trên để window.open hoạt động đúng
+              onClick={() => window.open(`${API_BASE_URL}/surveys/export`, '_blank')}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2"
             >
               📥 Xuất báo cáo
