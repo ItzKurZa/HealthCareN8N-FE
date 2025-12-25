@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Phone, Search, User, Calendar, Stethoscope, Loader2, ExternalLink } from 'lucide-react';
 import voiceService from '../../infrastructure/voice/voiceService';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 interface AppointmentInfo {
   id: string;
   fullName: string;
@@ -31,20 +33,25 @@ export const VoiceSurveyPage = () => {
     setCallSuccess(false);
 
     try {
-      // TODO: Replace with actual API call to search appointment by phone
-      // For now, using mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Gọi API để tra cứu appointment theo số điện thoại
+      const response = await fetch(`${API_BASE_URL}/api/appointments/lookup?phone=${encodeURIComponent(phoneNumber)}`);
+      const result = await response.json();
 
-      // Mock appointment data
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.error || 'Không tìm thấy lịch hẹn');
+      }
+
+      // Map data từ API sang AppointmentInfo
+      const data = result.data;
       setAppointmentInfo({
-        id: 'apt_' + Date.now(),
-        fullName: 'Nguyễn Thị Nguyên',
-        phone: phoneNumber,
-        doctor: 'BS. Phạm Minh Đức',
-        appointmentDate: '2025-11-26',
+        id: data.id || data.bookingId,
+        fullName: data.patientName || data.fullName,
+        phone: data.phone,
+        doctor: data.doctorName || data.doctor,
+        appointmentDate: data.appointmentDate || new Date().toISOString().split('T')[0],
       });
-    } catch (err) {
-      setError('Không tìm thấy thông tin lịch hẹn');
+    } catch (err: any) {
+      setError(err.message || 'Không tìm thấy thông tin lịch hẹn');
       console.error('Search error:', err);
     } finally {
       setLoading(false);
@@ -63,11 +70,10 @@ export const VoiceSurveyPage = () => {
       console.log('🎯 Initiating voice call for:', appointmentInfo.fullName);
       
       // Gọi backend để lưu thông tin lịch hẹn + tạo ElevenLabs conversation
-      const response = await fetch('https://bennett-unvanquishable-liquidly.ngrok-free.dev/api/voice-calls/initiate', {
+      const response = await fetch(`${API_BASE_URL}/api/voice-calls/initiate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning': 'true'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           appointmentId: appointmentInfo.id,
