@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Upload, FileText, CheckCircle } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { medicalService } from '../../infrastructure/medical/medicalService';
 import { Chatbot } from '../components/Chatbot';
+import { useToast } from '../contexts/ToastContext';
 import type { MedicalFile } from '../../shared/types';
 
 interface UploadPageProps {
@@ -11,25 +12,22 @@ interface UploadPageProps {
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 export const UploadPage = ({ user }: UploadPageProps) => {
+  const { showToast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
 
       if (selectedFile.size > MAX_FILE_SIZE) {
-        setError('File quá lớn. Tối đa 50MB');
+        showToast('File quá lớn. Tối đa 50MB', 'error');
         setFile(null);
         return;
       }
 
       setFile(selectedFile);
-      setSuccess(false);
-      setError('');
     }
   };
 
@@ -37,8 +35,6 @@ export const UploadPage = ({ user }: UploadPageProps) => {
     e.preventDefault();
     if (!file) return;
 
-    setError('');
-    setSuccess(false);
     setLoading(true);
 
     const fields = {
@@ -51,14 +47,14 @@ export const UploadPage = ({ user }: UploadPageProps) => {
 
     try {
       await medicalService.uploadFile(file, fields);
-      setSuccess(true);
+      showToast('Tải file lên thành công!', 'success');
       setFile(null);
       setDescription('');
 
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
     } catch (err: any) {
-      setError(err.message || 'Failed to upload file');
+      showToast(err.message || 'Tải file lên thất bại', 'error');
     } finally {
       setLoading(false);
     }
@@ -85,19 +81,6 @@ export const UploadPage = ({ user }: UploadPageProps) => {
             Upload your medical records, lab results, prescriptions, or any other health-related
             documents. Supported formats: PDF, JPG, PNG (Max 50MB)
           </p>
-
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6 flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5" />
-              <span>File uploaded successfully!</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

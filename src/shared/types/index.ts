@@ -13,12 +13,14 @@ export interface MedicalFile {
   file_url: string;
   file_type: string;
   file_size: number;
-  description?: string;
+  description: string;
+  summary?: string; // Tóm tắt từ AI
   uploaded_at: string;
 }
 
 export interface Booking {
   id: string;
+  submission_id?: string; // Mã đặt lịch chính là submissionId
   user_id: string;
   department: string;
   doctor_name?: string;
@@ -27,6 +29,7 @@ export interface Booking {
   reason: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
+  medical_record?: string; // Hồ sơ bệnh án (chỉ Doctor/Admin mới được ghi)
   created_at: string;
 }
 
@@ -50,4 +53,17 @@ export interface Doctor {
   department_name?: string;
   specialization?: string;
   available?: boolean;
+}
+
+export interface UserRole {
+  role: 'patient' | 'doctor' | 'admin';
+}
+
+export interface PatientStatistics {
+  totalPatients: number;
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, Clock } from 'lucide-react';
 import { bookingService } from '../../infrastructure/booking/bookingService';
 import { Chatbot } from '../components/Chatbot';
+import { useToast } from '../contexts/ToastContext';
 import type { Department, Doctor } from '../../shared/types';
 
 interface BookingPageProps {
@@ -9,20 +10,20 @@ interface BookingPageProps {
 }
 
 export const BookingPage = ({ user }: BookingPageProps) => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     department: '',
     doctorId: '',
     appointmentDate: '',
     appointmentTime: '',
+    reason: '',
     notes: '',
   });
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<(Department | string)[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
 
   const timeSlots = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
@@ -36,9 +37,13 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   useEffect(() => {
     if (formData.department) {
-      const filtered = doctors.filter(
-        (doc) => doc.department_id === formData.department
-      );
+      const filtered = doctors.filter((doc) => {
+        // Xử lý cả trường hợp department_id là string hoặc object
+        const docDeptId = typeof doc.department_id === 'string' 
+          ? doc.department_id 
+          : doc.department_id;
+        return docDeptId === formData.department;
+      });
       setFilteredDoctors(filtered);
     } else {
       setFilteredDoctors([]);
@@ -52,7 +57,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
       setDepartments(depts);
       setDoctors(docs);
     } catch (err: any) {
-      setError('Failed to load departments and doctors');
+      showToast('Không thể tải danh sách khoa và bác sĩ', 'error');
     } finally {
       setDataLoading(false);
     }
@@ -60,34 +65,38 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess(false);
     setLoading(true);
 
     try {
       const selectedDoctor = doctors.find((d) => d.name === formData.doctorId);
 
-      await bookingService.createBooking({
-        user_id: user.cccd,
-        full_name: user.fullname,
-        email: user.email,
-        phone: user.phone,
+      // Sử dụng user.id hoặc user.cccd tùy theo backend yêu cầu
+      // Nếu backend dùng cccd làm identifier, thì dùng cccd
+      // Nếu backend dùng id, thì dùng id
+      const userId = user.id || user.cccd || user.user_id;
+      
+      const bookingResult = await bookingService.createBooking({
+        user_id: userId,
+        full_name: user.fullname || user.user_metadata?.full_name || user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || user.user_metadata?.phone || '',
         department: formData.department,
         doctor_name: selectedDoctor?.name || undefined,
         appointment_date: formData.appointmentDate,
         appointment_time: formData.appointmentTime,
+        reason: formData.reason || 'Khám bệnh',
         notes: formData.notes || undefined,
       });
-      setSuccess(true);
-      setFormData({
-        department: '',
-        doctorId: '',
-        appointmentDate: '',
-        appointmentTime: '',
-        notes: '',
-      });
+      
+      const bookingCode = bookingResult.submission_id || bookingResult.id;
+      showToast(`Đặt lịch thành công! Mã đặt lịch của bạn: ${bookingCode}. Chúng tôi sẽ liên hệ với bạn sớm để xác nhận.`, 'success');
+      
+      // Redirect đến trang chi tiết lịch sau 1.5 giây
+      setTimeout(() => {
+        window.location.href = `/booking/${bookingCode}`;
+      }, 1500);
     } catch (err: any) {
-      setError(err.message || 'Failed to create booking 1');
+      showToast(err.message || 'Đặt lịch thất bại. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }
@@ -110,25 +119,13 @@ export const BookingPage = ({ user }: BookingPageProps) => {
         <div className="bg-white rounded-xl shadow-lg p-8">
           <div className="flex items-center space-x-3 mb-6">
             <Calendar className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Book Appointment</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Đặt Lịch Khám</h1>
           </div>
-
-          {success && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
-              Appointment booked successfully! We will contact you soon to confirm.
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Department *
+                Khoa *
               </label>
               <select
                 value={formData.department}
@@ -136,18 +133,22 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="">Select a department</option>
-                {departments.map((dept, index) => (
-                  <option key={index} value={dept}>
-                    {dept}
-                  </option>
-                ))}
+                <option value="">Chọn khoa</option>
+                {departments.map((dept, index) => {
+                  const deptValue = typeof dept === 'string' ? dept : (dept.name || dept.id);
+                  const deptLabel = typeof dept === 'string' ? dept : (dept.name || dept.id);
+                  return (
+                    <option key={index} value={deptValue}>
+                      {deptLabel}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Doctor
+                Bác sĩ
               </label>
               <select
                 value={formData.doctorId}
@@ -155,7 +156,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={!formData.department}
               >
-                <option value="">Any available doctor</option>
+                <option value="">Bất kỳ bác sĩ nào có sẵn</option>
                 {filteredDoctors.map((doctor, index) => (
                   <option key={index} value={doctor.name}>
                     {doctor.name}
@@ -164,7 +165,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
               </select>
               {!formData.department && (
                 <p className="text-sm text-gray-500 mt-1">
-                  Please select a department first
+                  Vui lòng chọn khoa trước
                 </p>
               )}
             </div>
@@ -172,7 +173,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Appointment Date *
+                  Ngày hẹn *
                 </label>
                 <input
                   type="date"
@@ -186,7 +187,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Appointment Time *
+                  Giờ hẹn *
                 </label>
                 <select
                   value={formData.appointmentTime}
@@ -194,7 +195,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
-                  <option value="">Select time</option>
+                  <option value="">Chọn giờ</option>
                   {timeSlots.map((time) => (
                     <option key={time} value={time}>
                       {time}
@@ -206,13 +207,27 @@ export const BookingPage = ({ user }: BookingPageProps) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Additional Notes (Optional)
+                Lý do khám bệnh *
+              </label>
+              <textarea
+                value={formData.reason}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                placeholder="Mô tả lý do khám bệnh, triệu chứng..."
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Ghi chú thêm (Tùy chọn)
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any additional information..."
-                rows={4}
+                placeholder="Thông tin bổ sung..."
+                rows={3}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -223,7 +238,7 @@ export const BookingPage = ({ user }: BookingPageProps) => {
               className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium text-lg flex items-center justify-center space-x-2"
             >
               <Clock className="w-5 h-5" />
-              <span>{loading ? 'Booking...' : 'Book Appointment'}</span>
+              <span>{loading ? 'Đang đặt lịch...' : 'Đặt Lịch'}</span>
             </button>
           </form>
         </div>

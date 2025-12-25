@@ -1,12 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authService } from '../../infrastructure/auth/authService';
 
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
+      setLoading(false);
+    } catch (error) {
+      setUser(null);
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    authService.getCurrentUser().then(setUser).catch(() => setUser(null)).finally(() => setLoading(false));
+    refreshUser();
 
     const { data: { subscription } } = authService.onAuthStateChange((user) => {
       setUser(user);
@@ -14,7 +25,7 @@ export const useAuth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshUser]);
 
-  return { user, loading };
+  return { user, loading, refreshUser };
 };

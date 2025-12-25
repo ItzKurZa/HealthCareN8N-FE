@@ -20,13 +20,17 @@ export const medicalService = {
         notes: fields.notes || '',
       }
     );
+    if (!response.file) {
+      throw new Error('Failed to upload file');
+    }
+    return response.file;
   },
 
   async getUserFiles(userId: string): Promise<MedicalFile[]> {
     const response = await apiClient.get<{ files: MedicalFile[] }>(
       `/medical-files/user/${userId}`
     );
-    return response.data?.files || [];
+    return response.files || [];
   },
 
   async deleteFile(fileId: string): Promise<void> {
