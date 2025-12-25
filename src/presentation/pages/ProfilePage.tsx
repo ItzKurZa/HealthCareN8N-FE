@@ -46,7 +46,7 @@ interface UserProfile {
   createdAt?: string;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
   const { showToast } = useToast();
@@ -861,7 +861,7 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
                       <h2 className="text-2xl font-bold text-gray-900 mb-2">Tải lên hồ sơ y tế</h2>
                       <p className="text-gray-600">
                         Tải lên hồ sơ y tế, kết quả xét nghiệm, đơn thuốc hoặc các tài liệu liên quan đến sức khỏe.
-                        Định dạng hỗ trợ: PDF (Tối đa 50MB)
+                        Định dạng hỗ trợ: PDF (Tối đa 100MB)
                       </p>
                     </div>
 
@@ -888,7 +888,7 @@ export const ProfilePage = ({ user, onSignOutSuccess }: ProfilePageProps) => {
                               Click để chọn file
                             </span>
                             <span className="text-sm text-gray-500 mt-2">
-                              PDF tối đa 50MB
+                              PDF tối đa 100MB
                             </span>
                           </label>
                         </div>
