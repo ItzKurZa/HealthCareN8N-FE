@@ -8,6 +8,7 @@ import { BookingPage } from './presentation/pages/BookingPage';
 import { UploadPage } from './presentation/pages/UploadPage';
 import { ProfilePage } from './presentation/pages/ProfilePage';
 import { VoiceCallPage } from './presentation/pages/VoiceCallPage';
+import { VoiceSurveyPage } from './presentation/pages/VoiceSurveyPage';
 import { DashboardPage } from './presentation/pages/DashboardPage';
 import { CustomerCarePage } from './presentation/pages/CustomerCarePage';
 
@@ -45,6 +46,7 @@ function App() {
       {currentPage === 'upload' && user && <UploadPage user={user} />}
       {currentPage === 'profile' && user && <ProfilePage user={user} />}
       {currentPage === 'voicecalls' && user && <VoiceCallPage />}
+      {currentPage === 'voicesurvey' && <VoiceSurveyPage />}
       {currentPage === 'dashboard' && <DashboardPage />}
       {currentPage === 'customercare' && <CustomerCarePage />}
 

@@ -77,6 +77,16 @@ export const Navbar = ({ currentPage, onNavigate, user }: NavbarProps) => {
             </button>
 
             <button
+              onClick={() => onNavigate('voicesurvey')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                currentPage === 'voicesurvey' ? 'text-green-600 bg-green-50' : 'text-gray-600 hover:text-green-600'
+              }`}
+            >
+              <Phone className="w-5 h-5" />
+              <span className="font-medium">Voice Survey</span>
+            </button>
+
+            <button
               onClick={() => onNavigate('customercare')}
               className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
                 currentPage === 'customercare' ? 'text-purple-600 bg-purple-50' : 'text-gray-600 hover:text-purple-600'
