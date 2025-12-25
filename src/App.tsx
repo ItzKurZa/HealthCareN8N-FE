@@ -21,6 +21,10 @@ import { DoctorSchedulePage } from './presentation/pages/DoctorSchedulePage';
 import { ToastContainer } from './presentation/components/ToastContainer';
 import { useToast } from './presentation/contexts/ToastContext';
 
+// --- Import 2 trang mới từ src1 ---
+import { CustomerCarePage } from './presentation/pages/CustomerCarePage';
+import { CSKHDashboardPage } from './presentation/pages/CSKHDashboardPage';
+
 function App() {
   const { user, loading, refreshUser } = useAuth();
   const { toasts, removeToast, showToast } = useToast();
@@ -28,53 +32,56 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isCheckInPage, setIsCheckInPage] = useState(false);
 
-  // Check if current path is check-in page, booking detail page, booking page, or clinical page
+  // 1. Xử lý URL (Deep Linking)
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.includes('/check-in/')) {
+    
+    // ƯU TIÊN: Link khảo sát công khai (Ví dụ: /survey/123)
+    if (path.includes('/survey/')) {
+      setCurrentPage('cskh');
+    } 
+    // Các trang full màn hình khác
+    else if (path.includes('/check-in/')) {
       setIsCheckInPage(true);
       setCurrentPage('check-in');
     } else if (path.includes('/booking/')) {
-      // Handle booking detail route (with ID)
       const bookingId = path.split('/booking/')[1]?.split('/')[0];
       if (bookingId) {
         setCurrentPage('booking-detail');
       }
     } else if (path.includes('/clinical/')) {
-      // Handle clinical page route
       setCurrentPage('doctor-clinical');
     } else if (path === '/booking' || path === '/booking/') {
-      // Handle booking page route (without ID) - use handleNavigate to check auth and permissions
       handleNavigate('booking');
     } else {
       setIsCheckInPage(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Auto redirect doctor to dashboard on login
+  // Redirect Doctor về Dashboard
   useEffect(() => {
     const role = getUserRole();
     if (role === 'doctor' && user && currentPage === 'home') {
       setCurrentPage('doctor-dashboard');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Redirect admin về dashboard nếu đang ở trang không được phép
+  // Redirect Admin
   useEffect(() => {
     const role = getUserRole();
     if (role === 'admin' && !isCheckInPage) {
-      const allowedPages = ['home', 'dashboard', 'patients'];
+      // Admin được phép xem các trang quản trị và cả trang khảo sát (để test)
+      const allowedPages = ['home', 'dashboard', 'patients', 'cskh', 'cskh-dashboard'];
       if (!allowedPages.includes(currentPage)) {
         setCurrentPage('dashboard');
       }
     }
   }, [user, currentPage, isCheckInPage]);
 
-  // Redirect về home nếu đã đăng xuất và đang ở trang yêu cầu đăng nhập
+  // Redirect trang cần đăng nhập
   useEffect(() => {
-    const protectedPages = ['booking', 'profile', 'lookup', 'schedule', 'dashboard', 'patients'];
+    // LƯU Ý: Đã xóa 'cskh' khỏi đây để bệnh nhân vãng lai có thể truy cập
+    const protectedPages = ['booking', 'profile', 'lookup', 'schedule', 'dashboard', 'patients', 'cskh-dashboard'];
     if (!user && protectedPages.includes(currentPage) && !isCheckInPage) {
       setCurrentPage('home');
     }
@@ -82,43 +89,55 @@ function App() {
 
   const getUserRole = () => {
     if (!user) return null;
-    // Lấy role từ user profile (từ backend API /account/profile)
-    // Backend trả về profile với field role từ Firestore
-    return user.role || 'patient'; // Mặc định là patient nếu không có role
+    return user.role || 'patient';
   };
 
   const handleNavigate = (page: string) => {
     const role = getUserRole();
-    const protectedPages = ['booking', 'profile', 'lookup']; // Yêu cầu đăng nhập cho tra cứu và đặt lịch
+    
+    // TRANG KHẢO SÁT (CSKH): Công khai, không cần check gì cả
+    if (page === 'cskh') {
+      setCurrentPage(page);
+      return;
+    }
+
+    const protectedPages = ['booking', 'profile', 'lookup'];
     const adminPages = ['dashboard', 'patients'];
+    const cskhDashboardPages = ['cskh-dashboard'];
     const doctorPages = ['schedule', 'doctor-dashboard', 'doctor-patients', 'doctor-records', 'doctor-schedule', 'doctor-clinical'];
     
-    // Admin chỉ được truy cập các trang quản lý
+    // Admin check
     if (role === 'admin') {
-      const allowedAdminPages = ['home', 'dashboard', 'patients', 'profile'];
+      const allowedAdminPages = ['home', 'dashboard', 'patients', 'profile', 'cskh', 'cskh-dashboard'];
       if (!allowedAdminPages.includes(page)) {
         showToast('Bạn không có quyền truy cập trang này', 'warning');
-        setCurrentPage('dashboard'); // Redirect về dashboard
+        setCurrentPage('dashboard');
         return;
       }
     }
     
-    // Doctor không được đặt lịch (theo RBAC model)
+    // Doctor check booking
     if (role === 'doctor' && page === 'booking') {
-      showToast('Bác sĩ không thể đặt lịch khám. Vui lòng liên hệ quản trị viên nếu cần hỗ trợ.', 'warning');
+      showToast('Bác sĩ không thể đặt lịch khám.', 'warning');
       return;
     }
     
-    // Yêu cầu đăng nhập cho tra cứu và đặt lịch
-    if (!user && protectedPages.includes(page)) {
+    // Auth check
+    if (!user && (protectedPages.includes(page) || cskhDashboardPages.includes(page))) {
       showToast('Vui lòng đăng nhập để sử dụng tính năng này', 'warning');
       setShowAuthModal(true);
       return;
     }
     
-    // Kiểm tra quyền truy cập
+    // Permission checks
     if (adminPages.includes(page) && role !== 'admin') {
       showToast('Bạn không có quyền truy cập trang này', 'warning');
+      return;
+    }
+
+    // Chỉ Admin hoặc nhân viên CSKH mới được xem Dashboard thống kê
+    if (cskhDashboardPages.includes(page) && role !== 'admin' && role !== 'cskh') {
+      showToast('Bạn không có quyền xem thống kê', 'warning');
       return;
     }
     
@@ -141,32 +160,11 @@ function App() {
     );
   }
 
-  // If check-in page, booking detail page, or clinical page, don't show navbar
+  // Fullscreen pages
   if (isCheckInPage || currentPage === 'booking-detail' || currentPage === 'doctor-clinical') {
-    if (isCheckInPage) {
-      return (
-        <div className="min-h-screen bg-gray-50">
-          <CheckInPage />
-          <GlobalLoading />
-        </div>
-      );
-    }
-    if (currentPage === 'booking-detail') {
-      return (
-        <div className="min-h-screen bg-gray-50">
-          <BookingDetailPage />
-          <GlobalLoading />
-        </div>
-      );
-    }
-    if (currentPage === 'doctor-clinical') {
-      return (
-        <div className="min-h-screen bg-gray-50">
-          <DoctorClinicalPage user={user} />
-          <GlobalLoading />
-        </div>
-      );
-    }
+    if (isCheckInPage) return <div className="min-h-screen bg-gray-50"><CheckInPage /><GlobalLoading /></div>;
+    if (currentPage === 'booking-detail') return <div className="min-h-screen bg-gray-50"><BookingDetailPage /><GlobalLoading /></div>;
+    if (currentPage === 'doctor-clinical') return <div className="min-h-screen bg-gray-50"><DoctorClinicalPage user={user} /><GlobalLoading /></div>;
   }
 
   return (
@@ -181,18 +179,24 @@ function App() {
 
       {currentPage === 'home' && <HomePage onNavigate={handleNavigate} />}
       {currentPage === 'about' && <AboutPage />}
-      {/* Yêu cầu đăng nhập cho tra cứu và đặt lịch */}
       {currentPage === 'lookup' && user && getUserRole() !== 'admin' && <LookupPage />}
       {currentPage === 'booking' && user && getUserRole() !== 'admin' && <BookingPage user={user} />}
       {currentPage === 'profile' && user && getUserRole() !== 'admin' && <ProfilePage user={user} onSignOutSuccess={refreshUser} />}
+      
       {/* Admin Dashboard */}
       {currentPage === 'dashboard' && user && getUserRole() === 'admin' && <DashboardPage user={user} />}
       {currentPage === 'patients' && user && getUserRole() === 'admin' && <PatientsPage user={user} />}
+      
+      {/* --- TRANG CSKH --- */}
+      {/* 1. Trang Khảo sát: Công khai, ai có link cũng vào được (currentPage = 'cskh') */}
+      {currentPage === 'cskh' && <CustomerCarePage />}
+      
+      {/* 2. Trang Thống kê: Chỉ Admin hoặc nhân viên CSKH mới thấy */}
+      {currentPage === 'cskh-dashboard' && user && (getUserRole() === 'admin' || getUserRole() === 'cskh') && <CSKHDashboardPage />}
+
       {/* Doctor Dashboard */}
       {currentPage === 'doctor-dashboard' && user && getUserRole() === 'doctor' && <DoctorDashboardPage user={user} />}
-      {/* Doctor và Patient thấy */}
       {currentPage === 'schedule' && user && getUserRole() !== 'admin' && <SchedulePage user={user} />}
-      {/* Doctor only pages */}
       {currentPage === 'doctor-patients' && user && getUserRole() === 'doctor' && <DoctorPatientsPage user={user} />}
       {currentPage === 'doctor-records' && user && getUserRole() === 'doctor' && <DoctorRecordsPage user={user} />}
       {currentPage === 'doctor-schedule' && user && getUserRole() === 'doctor' && <DoctorSchedulePage user={user} />}

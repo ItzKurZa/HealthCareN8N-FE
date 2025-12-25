@@ -1,4 +1,8 @@
-import { Home, Calendar, User, Activity, BarChart3, Users, Search, FileText, LogOut } from 'lucide-react';
+import { 
+  Home, Calendar, User, Activity, BarChart3, 
+  Users, Search, FileText, LogOut, 
+  PieChart 
+} from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 import { useToast } from '../contexts/ToastContext';
 
@@ -17,16 +21,29 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
     try {
       await authService.signOut();
       showToast('Đăng xuất thành công!', 'success');
-      // Refresh auth state immediately after successful signout
       if (onSignOutSuccess) {
         await onSignOutSuccess();
       }
-      // Redirect về trang home sau khi đăng xuất
       onNavigate('home');
     } catch (error: any) {
       showToast(error.message || 'Đăng xuất thất bại', 'error');
     }
   };
+
+  // Helper: CHỈ render link thống kê, link form khảo sát đã bị ẩn đi
+  const renderCSKHLinks = () => (
+    <>
+      <button
+        onClick={() => onNavigate('cskh-dashboard')}
+        className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+          currentPage === 'cskh-dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+        }`}
+      >
+        <PieChart className="w-5 h-5" />
+        <span className="font-medium">Thống kê CSKH</span>
+      </button>
+    </>
+  );
 
   return (
     <nav className="bg-white shadow-md">
@@ -38,18 +55,12 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
           </div>
 
           <div className="flex items-center space-x-6">
-            {/* Admin chỉ thấy các trang quản lý */}
-            {userRole === 'admin' ? (
+            {/* 1. Menu dành cho ADMIN */}
+            {userRole === 'admin' && (
               <>
-                <button
-                  onClick={() => onNavigate('home')}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                    currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                  }`}
-                >
-                  <Home className="w-5 h-5" />
-                  <span className="font-medium">Home</span>
-                </button>
+                {/* Admin xem được thống kê CSKH */}
+                {renderCSKHLinks()}
+                
                 <button
                   onClick={() => onNavigate('dashboard')}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
@@ -69,7 +80,6 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
                   <span className="font-medium">Bệnh Nhân</span>
                 </button>
                 
-                {/* Thay thế nút Profile bằng nút Đăng xuất cho Admin */}
                 {user && (
                   <button
                     onClick={handleSignOut}
@@ -80,104 +90,122 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
                   </button>
                 )}
               </>
-            ) : (
+            )}
+
+            {/* 2. Menu dành cho NHÂN VIÊN CSKH (Role: cskh) */}
+            {userRole === 'cskh' && (
               <>
-                {userRole === 'doctor' ? (
-                  <>
-                    {/* Menu tối giản cho Doctor - chỉ giữ các menu chính */}
-                    <button
-                      onClick={() => onNavigate('doctor-dashboard')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'doctor-dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <BarChart3 className="w-5 h-5" />
-                      <span className="font-medium">Dashboard</span>
-                    </button>
-                    <button
-                      onClick={() => onNavigate('schedule')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'schedule' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <Calendar className="w-5 h-5" />
-                      <span className="font-medium">Lịch Khám</span>
-                    </button>
-                    <button
-                      onClick={() => onNavigate('doctor-patients')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'doctor-patients' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <Users className="w-5 h-5" />
-                      <span className="font-medium">Bệnh Nhân</span>
-                    </button>
-                    <button
-                      onClick={() => onNavigate('doctor-records')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'doctor-records' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span className="font-medium">Hồ Sơ</span>
-                    </button>
-                    {user && (
-                      <button
-                        onClick={() => onNavigate('profile')}
-                        className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                          currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                        }`}
-                      >
-                        <User className="w-5 h-5" />
-                        <span className="font-medium">Profile</span>
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {/* Patient menu - giữ nguyên */}
-                    <button
-                      onClick={() => onNavigate('home')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <Home className="w-5 h-5" />
-                      <span className="font-medium">Home</span>
-                    </button>
+                {renderCSKHLinks()}
 
-                    <button
-                      onClick={() => onNavigate('lookup')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <Search className="w-5 h-5" />
-                      <span className="font-medium">Tra Cứu</span>
-                    </button>
+                {user && (
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-1 px-3 py-2 rounded-lg transition text-gray-600 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Đăng xuất</span>
+                  </button>
+                )}
+              </>
+            )}
 
-                    <button
-                      onClick={() => onNavigate('booking')}
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                        currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                      }`}
-                    >
-                      <Calendar className="w-5 h-5" />
-                      <span className="font-medium">Booking</span>
-                    </button>
+            {/* 3. Menu dành cho BÁC SĨ (Role: doctor) */}
+            {userRole === 'doctor' && (
+              <>
+                <button
+                  onClick={() => onNavigate('doctor-dashboard')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'doctor-dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="font-medium">Dashboard</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('schedule')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'schedule' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-medium">Lịch Khám</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('doctor-patients')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'doctor-patients' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Users className="w-5 h-5" />
+                  <span className="font-medium">Bệnh Nhân</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('doctor-records')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'doctor-records' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-medium">Hồ Sơ</span>
+                </button>
+                {user && (
+                  <button
+                    onClick={() => onNavigate('profile')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">Profile</span>
+                  </button>
+                )}
+              </>
+            )}
 
-                    {user && (
-                      <button
-                        onClick={() => onNavigate('profile')}
-                        className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                          currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                        }`}
-                      >
-                        <User className="w-5 h-5" />
-                        <span className="font-medium">Profile</span>
-                      </button>
-                    )}
-                  </>
+            {/* 4. Menu dành cho BỆNH NHÂN (Mặc định) */}
+            {/* LƯU Ý: Không hiển thị link 'cskh' ở đây */}
+            {userRole !== 'admin' && userRole !== 'doctor' && userRole !== 'cskh' && (
+              <>
+                <button
+                  onClick={() => onNavigate('home')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">Home</span>
+                </button>
+
+                <button
+                  onClick={() => onNavigate('lookup')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'lookup' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Search className="w-5 h-5" />
+                  <span className="font-medium">Tra Cứu</span>
+                </button>
+
+                <button
+                  onClick={() => onNavigate('booking')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'booking' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-medium">Booking</span>
+                </button>
+
+                {user && (
+                  <button
+                    onClick={() => onNavigate('profile')}
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">Profile</span>
+                  </button>
                 )}
               </>
             )}
