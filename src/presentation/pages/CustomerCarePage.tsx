@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   HeadphonesIcon, 
   ClipboardList, 
@@ -9,19 +9,13 @@ import {
   Loader2,
   CheckCircle,
   XCircle,
-  PhoneCall,
-  PhoneOff,
-  Mic,
   Search,
   User,
   Stethoscope,
-  Calendar,
-  ExternalLink
+  Calendar
 } from 'lucide-react';
 import { apiClient } from '../../config/api';
-
-// ElevenLabs Agent URL
-const ELEVENLABS_TALK_URL = 'https://elevenlabs.io/app/talk-to?agent_id=agent_4801kany60txemet20th12zqtw2v';
+import { VoiceSurveyPage } from './VoiceSurveyPage';
 
 interface AppointmentInfo {
   id: string;
@@ -46,7 +40,6 @@ interface SurveyFormData {
 }
 
 type ViewMode = 'selection' | 'survey' | 'call';
-type CallStatus = 'idle' | 'connecting' | 'connected' | 'ended' | 'error';
 
 export const CustomerCarePage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('selection');
@@ -59,11 +52,6 @@ export const CustomerCarePage = () => {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [appointmentInfo, setAppointmentInfo] = useState<AppointmentInfo | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
-  
-  // Call state  
-  const [callStatus, setCallStatus] = useState<CallStatus>('idle');
-  const [callDuration, setCallDuration] = useState(0);
-  const [transcript, setTranscript] = useState<string>('');
 
   // Survey form state
   const [surveyData, setSurveyData] = useState<SurveyFormData>({
@@ -76,17 +64,6 @@ export const CustomerCarePage = () => {
     waiting_time: '',
     comment: ''
   });
-
-  // Call duration timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (callStatus === 'connected') {
-      interval = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [callStatus]);
 
   // Lookup appointment by phone
   const handleLookup = async () => {
@@ -127,7 +104,6 @@ export const CustomerCarePage = () => {
 
   const handleSelectCall = () => {
     setViewMode('call');
-    setCallStatus('idle');
     setError(null);
   };
 
@@ -146,9 +122,6 @@ export const CustomerCarePage = () => {
       waiting_time: '',
       comment: ''
     });
-    setCallStatus('idle');
-    setCallDuration(0);
-    setTranscript('');
     setError(null);
     setSubmitSuccess(false);
   };
@@ -205,32 +178,7 @@ export const CustomerCarePage = () => {
     }
   };
 
-  // Open ElevenLabs Talk To page
-  const handleInitiateCall = () => {
-    if (!appointmentInfo) {
-      setError('Vui lòng tra cứu thông tin lịch hẹn trước');
-      return;
-    }
 
-    // Open ElevenLabs Talk To in new tab
-    window.open(ELEVENLABS_TALK_URL, '_blank');
-    
-    // Update local state to show call started
-    setCallStatus('connected');
-    setError(null);
-  };
-
-  // End call (just reset state, actual call is in ElevenLabs tab)
-  const handleEndCall = () => {
-    setCallStatus('ended');
-    setTranscript('Cuộc gọi đã kết thúc. Vui lòng quay lại sau khi hoàn thành khảo sát trên ElevenLabs.');
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Rating component
   const StarRating = ({ 
@@ -605,10 +553,10 @@ export const CustomerCarePage = () => {
     );
   }
 
-  // Voice Call View
+  // Voice Call View - Sử dụng VoiceSurveyPage component
   if (viewMode === 'call') {
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6">
         <button
           onClick={handleBack}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6"
@@ -617,182 +565,7 @@ export const CustomerCarePage = () => {
           Quay lại
         </button>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <div className="text-center mb-8">
-            <Phone className="w-12 h-12 text-green-600 mx-auto mb-3" />
-            <h1 className="text-2xl font-bold text-gray-800">Gọi Điện Khảo Sát</h1>
-            <p className="text-gray-600">Trò chuyện với AI qua ElevenLabs</p>
-          </div>
-
-          {/* Patient Info Input */}
-          {callStatus === 'idle' && (
-            <div className="space-y-6">
-              {/* Phone Lookup Section */}
-              {!appointmentInfo ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Search className="w-4 h-4 inline mr-1" />
-                      Tra cứu theo số điện thoại <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="tel"
-                        value={lookupPhone}
-                        onChange={(e) => setLookupPhone(e.target.value)}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Nhập số điện thoại bệnh nhân"
-                      />
-                      <button
-                        onClick={handleLookup}
-                        disabled={!lookupPhone || lookupLoading}
-                        className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                      >
-                        {lookupLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-                        Tra cứu
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Nhập số điện thoại để tìm kiếm thông tin lịch hẹn</p>
-                  </div>
-
-                  {lookupError && (
-                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
-                      {lookupError}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {/* Appointment Info Found */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-medium text-green-800 flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5" />
-                        Thông tin lịch hẹn
-                      </h3>
-                      <button
-                        onClick={() => {
-                          setAppointmentInfo(null);
-                          setLookupPhone('');
-                        }}
-                        className="text-sm text-green-600 hover:text-green-700"
-                      >
-                        Tra cứu khác
-                      </button>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-3 text-sm">
-                      <p><span className="font-medium text-gray-700">Họ tên:</span> {appointmentInfo.patientName}</p>
-                      <p><span className="font-medium text-gray-700">Số điện thoại:</span> {appointmentInfo.phone}</p>
-                      <p><span className="font-medium text-gray-700">Bác sĩ:</span> {appointmentInfo.doctorName}</p>
-                      <p><span className="font-medium text-gray-700">Ngày khám:</span> {appointmentInfo.appointmentDate}</p>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg flex items-center gap-2">
-                      <XCircle className="w-5 h-5" />
-                      {error}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleInitiateCall}
-                    className="w-full bg-green-600 text-white py-4 rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-3"
-                  >
-                    <PhoneCall className="w-6 h-6" />
-                    Bắt đầu cuộc gọi khảo sát
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                  <p className="text-sm text-gray-500 text-center mt-2">
-                    Cuộc gọi sẽ mở trong tab mới với ElevenLabs AI
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Connected - Show that call is active in another tab */}
-          {callStatus === 'connected' && (
-            <div className="text-center py-8">
-              <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                <Mic className="w-16 h-16 text-white" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Cuộc gọi đang diễn ra</h2>
-              <p className="text-4xl font-mono text-green-600 mb-4">{formatDuration(callDuration)}</p>
-              <p className="text-gray-600 mb-4">Đang trò chuyện với AI trên tab ElevenLabs</p>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-md mx-auto">
-                <p className="text-blue-700 text-sm">
-                  💡 Cuộc gọi đang diễn ra trên tab ElevenLabs. Hãy hoàn thành khảo sát ở đó rồi quay lại đây.
-                </p>
-              </div>
-              
-              <div className="flex gap-3 justify-center">
-                <a
-                  href={ELEVENLABS_TALK_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  Mở lại ElevenLabs
-                </a>
-                <button
-                  onClick={handleEndCall}
-                  className="bg-red-600 text-white px-6 py-3 rounded-full font-medium hover:bg-red-700 transition flex items-center gap-2"
-                >
-                  <PhoneOff className="w-5 h-5" />
-                  Kết thúc
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Call Ended */}
-          {callStatus === 'ended' && (
-            <div className="text-center py-8">
-              <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Cuộc gọi đã kết thúc</h2>
-              <p className="text-gray-600 mb-4">Thời lượng: {formatDuration(callDuration)}</p>
-              
-              {transcript && (
-                <div className="bg-gray-50 rounded-lg p-4 text-left mt-6">
-                  <h3 className="font-medium text-gray-800 mb-2">Nội dung cuộc gọi:</h3>
-                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{transcript}</p>
-                </div>
-              )}
-
-              <button
-                onClick={handleBack}
-                className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
-              >
-                Quay lại
-              </button>
-            </div>
-          )}
-
-          {/* Error */}
-          {callStatus === 'error' && (
-            <div className="text-center py-8">
-              <XCircle className="w-20 h-20 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Lỗi kết nối</h2>
-              <p className="text-gray-600 mb-4">{error || 'Không thể kết nối cuộc gọi'}</p>
-              
-              <button
-                onClick={() => setCallStatus('idle')}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition"
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ElevenLabs Attribution */}
-        <div className="text-center mt-4 text-sm text-gray-500">
-          <p>Powered by <span className="font-medium">ElevenLabs</span> Voice AI</p>
-        </div>
+        <VoiceSurveyPage />
       </div>
     );
   }
