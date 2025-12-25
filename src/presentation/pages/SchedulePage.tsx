@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Settings, FileText, X, List, Grid, CalendarDays, Play, Pause, XCircle as XCircleIcon, Users, FileText as FileTextIcon } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, CheckCircle, XCircle, Settings, FileText, X, List, Grid, CalendarDays, Play, Pause, XCircle as XCircleIcon, Users, File, ExternalLink, ArrowLeft, Paperclip } from 'lucide-react';
 import { doctorService, type PatientBooking } from '../../infrastructure/doctor/doctorService';
+import { medicalService } from '../../infrastructure/medical/medicalService';
 import { useToast } from '../contexts/ToastContext';
+import { MedicalFile } from '../../shared/types'; // Đảm bảo bạn đã có type này
 
 interface SchedulePageProps {
   user: any;
@@ -29,7 +31,16 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   const [showBookingDrawer, setShowBookingDrawer] = useState(false);
   const [drawerBooking, setDrawerBooking] = useState<PatientBooking | null>(null);
 
-  // Lấy tên bác sĩ từ user (giả sử có trong user object)
+  // --- NEW: File Viewing State ---
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [patientFiles, setPatientFiles] = useState<MedicalFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [fileViewMode, setFileViewMode] = useState<'list' | 'detail'>('list');
+  const [selectedFileDetail, setSelectedFileDetail] = useState<MedicalFile | null>(null);
+  const [currentPatientName, setCurrentPatientName] = useState('');
+  // -------------------------------
+
+  // Lấy tên bác sĩ từ user
   const doctorName = user?.fullname || user?.user_metadata?.full_name || user?.name || '';
 
   useEffect(() => {
@@ -54,7 +65,6 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
         filters.dateTo = dateFilter;
       }
       const result = await doctorService.getDoctorBookings(doctorName, filters);
-      // getDoctorBookings trả về { bookings, pagination }
       setBookings(result.bookings || []);
     } catch (err: any) {
       const errorMsg = err.message || 'Không thể tải lịch hẹn';
@@ -77,7 +87,7 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
         completed: 'Hoàn thành lịch hẹn thành công!',
       };
       showToast(statusMessages[newStatus] || 'Cập nhật trạng thái thành công!', 'success');
-      loadBookings(); // Reload để lấy dữ liệu mới nhất
+      loadBookings();
     } catch (err: any) {
       const errorMsg = err.message || 'Cập nhật trạng thái thất bại';
       setError(errorMsg);
@@ -90,6 +100,37 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
     setMedicalRecord(booking.medical_record || '');
     setShowMedicalRecordModal(true);
   };
+
+  // --- NEW: Handle View Files ---
+  const handleViewFiles = async (booking: PatientBooking) => {
+    if (!booking.user_id) {
+        showToast('Không tìm thấy ID bệnh nhân', 'warning');
+        return;
+    }
+
+    setShowFileModal(true);
+    setFileViewMode('list');
+    setLoadingFiles(true);
+    setCurrentPatientName(booking.full_name);
+    setPatientFiles([]);
+
+    try {
+        // Gọi service lấy file từ backend (Firebase -> Backblaze info)
+        const files = await medicalService.getUserFiles(booking.user_id);
+        setPatientFiles(files);
+    } catch (err: any) {
+        console.error(err);
+        showToast('Lỗi khi tải danh sách file', 'error');
+    } finally {
+        setLoadingFiles(false);
+    }
+  };
+
+  const handleSelectFile = (file: MedicalFile) => {
+      setSelectedFileDetail(file);
+      setFileViewMode('detail');
+  };
+  // ------------------------------
 
   const handleSaveMedicalRecord = async () => {
     if (!selectedBooking) return;
@@ -106,7 +147,7 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
       );
       showToast('Ghi hồ sơ bệnh án thành công!', 'success');
       setShowMedicalRecordModal(false);
-      loadBookings(); // Reload để lấy dữ liệu mới nhất
+      loadBookings();
     } catch (err: any) {
       showToast(err.message || 'Ghi hồ sơ bệnh án thất bại', 'error');
     } finally {
@@ -115,7 +156,6 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   };
 
   const getStatusColor = (status: string) => {
-    // Màu theo yêu cầu: PENDING=Xám, CONFIRMED=Xanh, COMPLETED=Xanh đậm, CANCELLED=Đỏ, NO_SHOW=Cam
     switch (status?.toUpperCase()) {
       case 'PENDING':
         return 'bg-gray-100 text-gray-800 border-gray-300';
@@ -140,7 +180,6 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   
   const handleStartExamination = async () => {
     if (!drawerBooking) return;
-    // Redirect đến màn hình khám bệnh
     const bookingId = drawerBooking.submission_id || drawerBooking.id;
     window.location.href = `/clinical/${bookingId}`;
   };
@@ -231,6 +270,7 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
@@ -242,37 +282,13 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
             </div>
             {/* View Mode Toggle */}
             <div className="flex items-center space-x-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
-              <button
-                onClick={() => setViewMode('day')}
-                className={`px-4 py-2 rounded-md transition ${
-                  viewMode === 'day' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-                title="Day View"
-              >
+              <button onClick={() => setViewMode('day')} className={`px-4 py-2 rounded-md transition ${viewMode === 'day' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`} title="Day View">
                 <CalendarDays className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => setViewMode('week')}
-                className={`px-4 py-2 rounded-md transition ${
-                  viewMode === 'week' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-                title="Week View"
-              >
+              <button onClick={() => setViewMode('week')} className={`px-4 py-2 rounded-md transition ${viewMode === 'week' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`} title="Week View">
                 <Grid className="w-5 h-5" />
               </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 rounded-md transition ${
-                  viewMode === 'list' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-                title="List View"
-              >
+              <button onClick={() => setViewMode('list')} className={`px-4 py-2 rounded-md transition ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`} title="List View">
                 <List className="w-5 h-5" />
               </button>
             </div>
@@ -285,15 +301,12 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
           </div>
         )}
 
+        {/* Filters */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Lọc theo trạng thái</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="all">Tất cả trạng thái</option>
                 <option value="pending">Đang chờ</option>
                 <option value="confirmed">Đã xác nhận</option>
@@ -301,19 +314,14 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                 <option value="cancelled">Đã hủy</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Lọc theo ngày</label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
             </div>
           </div>
         </div>
 
+        {/* Bookings List */}
         {bookings.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -327,9 +335,7 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-5 h-5 text-white" />
                     <h2 className="text-xl font-bold text-white">{formatDate(date)}</h2>
-                    <span className="text-blue-100 text-sm ml-2">
-                      ({groupedBookings[date].length} lịch hẹn)
-                    </span>
+                    <span className="text-blue-100 text-sm ml-2">({groupedBookings[date].length} lịch hẹn)</span>
                   </div>
                 </div>
 
@@ -345,10 +351,10 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                             className="border-2 rounded-lg p-6 hover:shadow-md transition cursor-pointer"
                             style={{
                               borderColor: booking.status === 'pending' ? '#9ca3af' :
-                                          booking.status === 'confirmed' ? '#3b82f6' :
-                                          booking.status === 'completed' ? '#15803d' :
-                                          booking.status === 'cancelled' || booking.status === 'canceled' ? '#dc2626' :
-                                          booking.status === 'no_show' ? '#ea580c' : '#9ca3af'
+                                booking.status === 'confirmed' ? '#3b82f6' :
+                                booking.status === 'completed' ? '#15803d' :
+                                booking.status === 'cancelled' || booking.status === 'canceled' ? '#dc2626' :
+                                booking.status === 'no_show' ? '#ea580c' : '#9ca3af'
                             }}
                             onClick={() => handleBookingClick(booking)}
                           >
@@ -357,25 +363,11 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                                 <div className="flex items-center space-x-3 mb-3">
                                   <div className="flex items-center space-x-2">
                                     <Clock className="w-5 h-5 text-blue-600" />
-                                    <span className="text-lg font-semibold text-gray-900">
-                                      {booking.appointment_time}
-                                    </span>
+                                    <span className="text-lg font-semibold text-gray-900">{booking.appointment_time}</span>
                                   </div>
-                                  <span
-                                    className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                      booking.status
-                                    )}`}
-                                  >
+                                  <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
                                     <StatusIcon className="w-3 h-3" />
-                                    <span>
-                                      {booking.status === 'pending'
-                                        ? 'Đang chờ'
-                                        : booking.status === 'confirmed'
-                                        ? 'Đã xác nhận'
-                                        : booking.status === 'completed'
-                                        ? 'Đã hoàn thành'
-                                        : 'Đã hủy'}
-                                    </span>
+                                    <span>{booking.status === 'pending' ? 'Đang chờ' : booking.status === 'confirmed' ? 'Đã xác nhận' : booking.status === 'completed' ? 'Đã hoàn thành' : 'Đã hủy'}</span>
                                   </span>
                                 </div>
 
@@ -385,27 +377,13 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                                     <span className="text-gray-900 font-medium">{booking.full_name}</span>
                                   </div>
                                   <div className="flex items-center space-x-2">
-                                    <Mail className="w-4 h-4 text-gray-400" />
-                                    <span className="text-gray-600 text-sm">{booking.email}</span>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
                                     <Phone className="w-4 h-4 text-gray-400" />
                                     <span className="text-gray-600 text-sm">{booking.phone}</span>
                                   </div>
                                   <div className="mt-3">
-                                    <p className="text-sm text-gray-600">
-                                      <span className="font-medium">Khoa:</span> {booking.department}
-                                    </p>
-                                    {booking.reason && (
-                                      <p className="text-sm text-gray-600 mt-1">
-                                        <span className="font-medium">Lý do:</span> {booking.reason}
-                                      </p>
-                                    )}
-                                    {booking.notes && (
-                                      <p className="text-sm text-gray-600 mt-1">
-                                        <span className="font-medium">Ghi chú:</span> {booking.notes}
-                                      </p>
-                                    )}
+                                    <p className="text-sm text-gray-600"><span className="font-medium">Khoa:</span> {booking.department}</p>
+                                    {booking.reason && <p className="text-sm text-gray-600 mt-1"><span className="font-medium">Lý do:</span> {booking.reason}</p>}
+                                    {booking.notes && <p className="text-sm text-gray-600 mt-1"><span className="font-medium">Ghi chú:</span> {booking.notes}</p>}
                                     {booking.medical_record && (
                                       <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                                         <p className="text-sm font-medium text-blue-900 mb-1">Hồ sơ bệnh án:</p>
@@ -416,8 +394,17 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                                 </div>
                               </div>
 
-                              <div className="ml-4 flex flex-col space-y-2">
-                                {/* Nút ghi hồ sơ bệnh án - chỉ hiện khi đã confirmed hoặc completed */}
+                              <div className="ml-4 flex flex-col space-y-2" onClick={(e) => e.stopPropagation()}>
+                                {/* --- NÚT XEM FILE UPLOAD MỚI --- */}
+                                <button
+                                    onClick={() => handleViewFiles(booking)}
+                                    className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition text-sm font-medium flex items-center justify-center space-x-1"
+                                >
+                                    <Paperclip className="w-4 h-4" />
+                                    <span>Xem file upload</span>
+                                </button>
+                                {/* ------------------------------ */}
+
                                 {(booking.status === 'confirmed' || booking.status === 'completed') && (
                                   <button
                                     onClick={() => handleOpenMedicalRecord(booking)}
@@ -428,20 +415,12 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                                   </button>
                                 )}
                                 {booking.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
-                                    >
-                                      Xác nhận
-                                    </button>
-                                  </>
+                                  <button onClick={() => handleStatusChange(booking.id, 'confirmed')} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium">
+                                    Xác nhận
+                                  </button>
                                 )}
                                 {booking.status === 'confirmed' && (
-                                  <button
-                                    onClick={() => handleStatusChange(booking.id, 'completed')}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-                                  >
+                                  <button onClick={() => handleStatusChange(booking.id, 'completed')} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
                                     Hoàn thành
                                   </button>
                                 )}
@@ -458,7 +437,144 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
         )}
       </div>
 
-      {/* Modal ghi hồ sơ bệnh án */}
+      {/* --- MODAL XEM FILE UPLOAD --- */}
+      {showFileModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col">
+            {/* Header Modal */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+               <div className="flex items-center space-x-3">
+                 <div className="bg-indigo-100 p-2 rounded-full">
+                    <Paperclip className="w-6 h-6 text-indigo-600" />
+                 </div>
+                 <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                        {fileViewMode === 'list' ? 'File bệnh nhân upload' : 'Chi tiết file'}
+                    </h2>
+                    <p className="text-sm text-gray-500">Bệnh nhân: {currentPatientName}</p>
+                 </div>
+               </div>
+               <button onClick={() => setShowFileModal(false)} className="text-gray-400 hover:text-gray-600">
+                 <X className="w-6 h-6" />
+               </button>
+            </div>
+
+            {/* Body Modal */}
+            <div className="flex-1 overflow-y-auto p-6">
+                {loadingFiles ? (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-3"></div>
+                        <p className="text-gray-500">Đang tải danh sách file...</p>
+                    </div>
+                ) : fileViewMode === 'list' ? (
+                    // --- MÀN HÌNH DANH SÁCH FILE ---
+                    <>
+                        {patientFiles.length === 0 ? (
+                            <div className="text-center py-10">
+                                <File className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+                                <h3 className="text-lg font-medium text-gray-900">Chưa có file nào</h3>
+                                <p className="text-gray-500">Bệnh nhân chưa tải lên tài liệu y tế nào.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {patientFiles.map((file) => (
+                                    <div 
+                                        key={file.id} 
+                                        onClick={() => handleSelectFile(file)}
+                                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-400 hover:shadow-md cursor-pointer transition-all bg-white"
+                                    >
+                                        <div className="flex items-center space-x-4 overflow-hidden">
+                                            <div className="bg-indigo-50 p-3 rounded-lg flex-shrink-0">
+                                                <FileText className="w-6 h-6 text-indigo-600" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-gray-900 truncate">{file.file_name}</p>
+                                                <div className="flex items-center text-xs text-gray-500 mt-1 space-x-2">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>{new Date(file.uploaded_at).toLocaleString('vi-VN')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-indigo-600">
+                                            <ArrowLeft className="w-5 h-5 rotate-180" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    // --- MÀN HÌNH CHI TIẾT FILE ---
+                    selectedFileDetail && (
+                        <div className="space-y-6">
+                            <button 
+                                onClick={() => setFileViewMode('list')}
+                                className="flex items-center text-sm text-gray-500 hover:text-indigo-600 transition-colors"
+                            >
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                Quay lại danh sách
+                            </button>
+
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="flex items-start space-x-3">
+                                    <File className="w-8 h-8 text-indigo-500 mt-1" />
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 break-all">{selectedFileDetail.file_name}</h3>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Ngày tải lên: {new Date(selectedFileDetail.uploaded_at).toLocaleString('vi-VN')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-6">
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">Mô tả của bệnh nhân</h4>
+                                    <div className="bg-white border border-gray-200 p-4 rounded-lg text-gray-700 text-sm">
+                                        {selectedFileDetail.description || <span className="text-gray-400 italic">Không có mô tả</span>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">Tóm tắt bởi AI</h4>
+                                    <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+                                        {(selectedFileDetail as any).summary || <span className="text-gray-500 italic">Chưa có tóm tắt</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-xl">
+                {fileViewMode === 'detail' && selectedFileDetail ? (
+                    <>
+                        <a 
+                            href={selectedFileDetail.file_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center shadow-sm"
+                        >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Xem file gốc (PDF/Ảnh)
+                        </a>
+                    </>
+                ) : (
+                    <button
+                        onClick={() => setShowFileModal(false)}
+                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                    >
+                        Đóng
+                    </button>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ghi hồ sơ bệnh án (Giữ nguyên) */}
       {showMedicalRecordModal && selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -638,6 +754,15 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
                 </div>
               )}
 
+              {/* Nút Xem file Upload trong Drawer */}
+              <button
+                onClick={() => handleViewFiles(drawerBooking)}
+                className="w-full px-4 py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition font-medium flex items-center justify-center space-x-2"
+              >
+                <Paperclip className="w-5 h-5" />
+                <span>Xem file bệnh nhân upload</span>
+              </button>
+
               {/* Nút ghi hồ sơ bệnh án */}
               {(drawerBooking.status === 'confirmed' || drawerBooking.status === 'completed') && (
                 <button
@@ -658,4 +783,3 @@ export const SchedulePage = ({ user }: SchedulePageProps) => {
     </div>
   );
 };
-

@@ -13,7 +13,8 @@ export interface MedicalFile {
   file_url: string;
   file_type: string;
   file_size: number;
-  description?: string;
+  description: string;
+  summary?: string; // Tóm tắt từ AI
   uploaded_at: string;
 }
 

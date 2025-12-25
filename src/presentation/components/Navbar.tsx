@@ -1,4 +1,4 @@
-import { Home, Calendar, User, Activity, BarChart3, Users, Clock, Search, FileText, Settings as SettingsIcon } from 'lucide-react';
+import { Home, Calendar, User, Activity, BarChart3, Users, Search, FileText, LogOut } from 'lucide-react';
 import { authService } from '../../infrastructure/auth/authService';
 import { useToast } from '../contexts/ToastContext';
 
@@ -12,6 +12,7 @@ interface NavbarProps {
 
 export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSuccess }: NavbarProps) => {
   const { showToast } = useToast();
+  
   const handleSignOut = async () => {
     try {
       await authService.signOut();
@@ -40,15 +41,15 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
             {/* Admin chỉ thấy các trang quản lý */}
             {userRole === 'admin' ? (
               <>
-            <button
-              onClick={() => onNavigate('home')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <Home className="w-5 h-5" />
-              <span className="font-medium">Home</span>
-            </button>
+                <button
+                  onClick={() => onNavigate('home')}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
+                    currentPage === 'home' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">Home</span>
+                </button>
                 <button
                   onClick={() => onNavigate('dashboard')}
                   className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
@@ -67,15 +68,15 @@ export const Navbar = ({ currentPage, onNavigate, user, userRole, onSignOutSucce
                   <Users className="w-5 h-5" />
                   <span className="font-medium">Bệnh Nhân</span>
                 </button>
+                
+                {/* Thay thế nút Profile bằng nút Đăng xuất cho Admin */}
                 {user && (
                   <button
-                    onClick={() => onNavigate('profile')}
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition ${
-                      currentPage === 'profile' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-blue-600'
-                    }`}
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-1 px-3 py-2 rounded-lg transition text-gray-600 hover:text-red-600 hover:bg-red-50"
                   >
-                    <User className="w-5 h-5" />
-                    <span className="font-medium">Profile</span>
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-medium">Đăng xuất</span>
                   </button>
                 )}
               </>
