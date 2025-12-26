@@ -214,7 +214,7 @@ export const BookingDetailPage = ({ bookingId }: BookingDetailPageProps) => {
                   <User className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
                     <p className="text-sm text-gray-600">Họ và tên</p>
-                    <p className="font-semibold text-gray-900">{booking.fullname || 'N/A'}</p>
+                    <p className="font-semibold text-gray-900">{booking.full_name || 'N/A'}</p>
                   </div>
                 </div>
                 
